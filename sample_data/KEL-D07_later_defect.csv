@@ -1,0 +1,2 @@
+defect_id,type,affected_branches,affected_start,affected_end,versions,symptoms,date_reported
+KEL-D07,KEL,214;117,2013-02-01,2013-07-31,Horizon Online v2,Reversal of a failed bill-payment recovery leaves a phantom debit in the cash account,2013-11-15

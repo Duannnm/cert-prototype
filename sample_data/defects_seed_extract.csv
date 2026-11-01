@@ -1,0 +1,6 @@
+defect_id,type,affected_branches,affected_start,affected_end,versions,symptoms,date_reported
+PEAK-P03,PEAK,088,2012-09-03,2012-12-14,Horizon Online v1;Horizon Online v2,Remote data correction applied to branch transactions without a branch-visible record,2012-12-20
+KEL-D02,KEL,101;156;214;233,2012-11-01,2013-08-30,Legacy Horizon,Counter freeze during cash declaration duplicates the declared amount,2013-02-11
+PEAK-P08,PEAK,ALL,2013-08-01,2013-10-31,Horizon Online v2,Branch trading statement prints with misaligned columns; underlying figures unaffected,2013-09-23
+KEL-D05,KEL,042;117,2007-01-08,2010-03-31,Legacy Horizon,Transfer between stock units recorded twice after a communications failure,2013-10-07
+KEL-D01,KEL,214;305,2013-03-18,2013-06-28,Horizon Online v2,Stock-unit rollover posts a duplicate discrepancy to the local suspense account; the shortfall appears at trading-period end,2013-09-09

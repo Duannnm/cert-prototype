@@ -1,0 +1,125 @@
+# CERT – Case Evidence Review Tracker
+
+Technology demonstrator for the IS4234 (NUS, AY2026/27 Sem 1) group project on the Post Office Horizon case.
+CERT sits between supplier-held technical records and any decision about an individual subpostmaster (SPM). It
+links defects to cases, shows missing evidence, **blocks reliance on disputed figures** until an independent
+reviewer has recorded a reasoned decision, escalates delays, and re-screens every past case when a new defect
+record arrives.
+
+CERT does **not** decide causation, guilt or disclosure. A defect link means "requires inquiry"; a non-match is
+"no known defect identified", never "Horizon reliable". All people, branches and records are fictional.
+
+**Hosted demo:** _add the Streamlit Community Cloud link here_
+
+## Run locally
+
+Requires Python 3.11 or later.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+The app opens at http://localhost:8501. On first run it builds `data/cert.db` from the synthetic seed. To rebuild
+it at any time, use **Reset demo data** in the sidebar or run `python seed.py`.
+
+## Run the tests and regenerate `test_results.md`
+
+```bash
+python evaluation.py
+```
+
+This runs the pytest suite (one test per row of report Table 4.6, plus integrity and page-render tests), computes
+recall, precision and gate enforcement on the seed data, and writes [`test_results.md`](test_results.md).
+`pytest -q` runs the tests alone.
+
+## Deploy to Streamlit Community Cloud
+
+1. Push this folder to a **public** GitHub repository (the `.gitignore` already excludes `.venv/` and `data/`).
+2. Go to https://share.streamlit.io, sign in with GitHub and choose **Create app → Deploy a public app from
+   GitHub**.
+3. Pick the repository and branch, set **Main file path** to `app.py`, open **Advanced settings** and choose
+   **Python 3.12**.
+4. Deploy. The first visitor's session builds the database from the seed (a few seconds).
+5. Copy the `*.streamlit.app` URL into this README, the Demonstrator Guide and the report.
+
+The hosted database is shared by all visitors and is rebuilt whenever the app restarts. Ask markers to press
+**Reset demo data** first so they see the seeded state.
+
+## Using the demo
+
+* **Sidebar:** pick a role and a named user (this stands in for logins), set the **demo clock** (defaults to
+  18 Nov 2013) and **Reset demo data**.
+* **Case list:** every case with stage, reliance gate (BLOCKED / CLEAR / CLOSED), open gaps and escalations.
+  Select a row to open it. Investigators can register new cases here.
+* **Case view:** evidence coverage, defect links with explanations, the expert check, the gate banner stating
+  why reliance is blocked, tasks and escalations, the review form, reliance actions and exceptions, supplier
+  evidence, helpline records and the full case history. **Export evidence index** downloads a CSV.
+* **Defect records:** list PEAKs/KELs and add one by CSV upload or form; saving runs Rule 5. The
+  *Demo: load the later defect record* tab loads KEL-D07 in one click.
+* **Oversight dashboard:** the Table 4.4 key risk indicators with RAG status and escalation targets, current
+  escalations and gate-attempt counts.
+* **Audit log & integrity:** filterable append-only log, **Verify hashes**, **Verify audit-log chain** and a
+  demo-only simulated out-of-band edit.
+
+### Demo users
+
+| Role | Named users |
+|---|---|
+| Investigator | A. Tan, R. Shah |
+| Supplier liaison manager | M. Okafor |
+| Technical reviewer | S. Patel |
+| Independent legal reviewer | J. Lim, K. Wong, E. Clarke (external) |
+| Legal lead (control owner) | D. Morgan |
+| Internal audit / Audit & Risk Committee | H. Ng |
+
+### Seeded scenarios
+
+| Case | What it shows |
+|---|---|
+| C014 | Report Section 4.2.6: £4,200 over six weeks; ARQ covers 4 of 6 weeks (Gap + retrieval task); KEL-D01 linked though reported months later; KEL-D02 not linked (different version); expert statement omits KEL-D01; independent review refers material to the prosecutor; recovery blocked. Load KEL-D07 to see Rule 5 create a reassessment task linked to the original decision. |
+| C001 | Fully clear case: complete evidence, no known defect identified, independent review permits reliance. |
+| C003 | Closed 2008 Legacy Horizon case caught by KEL-D05 (screened regardless of date); reassessment 25 WD old → Committee. |
+| C005 | Self-approval attempt by the involved investigator (R. Shah): blocked and logged. |
+| C006 | ARQ request open 25 working days → Committee; supplier schedule breached; a rejected exception attempt. |
+| C007 | Legal deadline 3 working days away → immediate escalation; remote-intervention logs Unknown. |
+| C008 | Horizon version Unknown → manual-review queue. |
+| C009 | Unavailable evidence: retrieval documented, exception authorised by an uninvolved legal lead, gap still visible, gate CLEAR. |
+| C010 | Exception authorisation by a conflicted legal lead rejected and escalated to the Committee. |
+| C011 | Closed case reviewed in 2013; caught by KEL-D07 when it is loaded. |
+
+## Project structure
+
+```
+app.py            Entry point: page config, sidebar, Rule 4 sweep, navigation
+ui.py             Shared Streamlit helpers (sidebar, styling, tables, gate banner)
+pages/            Case list, case view, defect records, dashboard, audit log, about
+rules.py          Pure rules engine: Rules 1–5 and the expert completeness check (no Streamlit)
+services.py       Workflow: applies the rules to the database and writes the audit log
+db.py             SQLite schema, SHA-256 source records, append-only hash-chained audit log
+seed.py           Synthetic data, replayed through the services on a dated timeline
+evaluation.py     Runs the tests, computes metrics, writes test_results.md
+tests/            pytest: Table 4.6, integrity and page-render tests
+sample_data/      CSVs for the defect upload (KEL-D07 and the seeded extract)
+```
+
+## Design choice: transparent rules, not machine learning
+
+CERT uses explicit rules so a reviewer can see exactly which fields matched and why an action was blocked, and
+because no validated training dataset of PEAKs, KELs and case outcomes exists. The reliance gate is a
+human-in-the-loop control: it never approves anything itself; it stops reliance until a qualified, independent
+person records a reasoned decision.
+
+## Known limitations
+
+* Synthetic data only; results cannot establish real-world accuracy.
+* The role switcher stands in for authentication; production needs identity and role-based access control,
+  encryption, retention rules, tested recovery and security testing.
+* Supplier records are loaded by file upload; direct supplier integration is a later phase.
+* The demo clock is user-controlled; production needs a trusted time source.
+* Escalation thresholds and the 10-working-day supplier evidence schedule are proposed service standards, not
+  statutory periods.
+* A hash proves a record is unchanged since receipt, not that it is true. CERT cannot reconstruct evidence that
+  was never retained.
