@@ -11,6 +11,11 @@ CERT does **not** decide causation, guilt or disclosure. A defect link means "re
 
 **Hosted demo:** _add the Streamlit Community Cloud link here_
 
+**Demonstrator Guide:** [docs/GroupID_Demonstrator_Guide.pdf](docs/GroupID_Demonstrator_Guide.pdf) (source:
+[docs/Demonstrator_Guide.md](docs/Demonstrator_Guide.md)). It covers the prototype's purpose, users, the GRC
+problem and decisions supported, functions and workflow, tools, how to access and run it, requirements, demo
+accounts and data, and known limitations.
+
 ## Run locally
 
 Requires Python 3.11 or later.
@@ -43,10 +48,24 @@ recall, precision and gate enforcement on the seed data, and writes [`test_resul
 3. Pick the repository and branch, set **Main file path** to `app.py`, open **Advanced settings** and choose
    **Python 3.12**.
 4. Deploy. The first visitor's session builds the database from the seed (a few seconds).
-5. Copy the `*.streamlit.app` URL into this README, the Demonstrator Guide and the report.
+5. Copy the `*.streamlit.app` URL into this README and the report, then rebuild the Demonstrator Guide with it
+   (next section).
 
 The hosted database is shared by all visitors and is rebuilt whenever the app restarts. Ask markers to press
 **Reset demo data** first so they see the seeded state.
+
+## Rebuild the Demonstrator Guide PDF
+
+The guide's text lives in [`docs/Demonstrator_Guide.md`](docs/Demonstrator_Guide.md). Edit that, then rebuild the
+PDF (needs `reportlab`, which is documentation tooling only and not in `requirements.txt`):
+
+```bash
+pip install reportlab
+python docs/build_guide.py --group G1 --url https://your-app.streamlit.app
+```
+
+This writes `docs/G1_Demonstrator_Guide.pdf`. Without `--group` and `--url`, the Group ID and hosted link appear
+as red placeholders.
 
 ## Using the demo
 
@@ -103,6 +122,7 @@ seed.py           Synthetic data, replayed through the services on a dated timel
 evaluation.py     Runs the tests, computes metrics, writes test_results.md
 tests/            pytest: Table 4.6, integrity and page-render tests
 sample_data/      CSVs for the defect upload (KEL-D07 and the seeded extract)
+docs/             Demonstrator Guide (Markdown source, PDF, build_guide.py)
 ```
 
 ## Design choice: transparent rules, not machine learning
