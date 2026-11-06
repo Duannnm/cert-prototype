@@ -69,6 +69,20 @@ as red placeholders.
 
 ## Using the demo
 
+For the presentation, open **Oversight → Demo walkthrough**. It links to each step of the
+6:30 demonstration and shows whether KEL-D07 is already loaded. Navigation does not change
+roles or load records automatically. Switch roles explicitly in the sidebar.
+
+**Oversight → Test results** displays the saved `test_results.md` evaluation, including its
+generation date, denominators, nine scenarios and detailed outcomes. It does not run tests
+against the live database. Refresh it locally with `python evaluation.py`, then commit and deploy
+the updated report. Case resets do not change the saved evaluation.
+
+The case view now keeps accountable next actions next to the reliance gate. Expand
+**Evidence coverage, defect links and expert checks** for the detailed evidence, or use the
+task, review and reliance links to reach the relevant controls. Loading a defect shows the
+screening summary and links to affected cases, including closed cases.
+
 * **Sidebar:** pick a role and a named user (this stands in for logins), set the **demo clock** (defaults to
   18 Nov 2013) and **Reset demo data**.
 * **Case list:** every case with stage, reliance gate (BLOCKED / CLEAR / CLOSED), open gaps and escalations.
@@ -114,7 +128,7 @@ as red placeholders.
 ```
 app.py            Entry point: page config, sidebar, Rule 4 sweep, navigation
 ui.py             Shared Streamlit helpers (sidebar, styling, tables, gate banner)
-pages/            Case list, case view, defect records, dashboard, audit log, about
+views/            Case list, case view, defect records, dashboard, audit log, about
 rules.py          Pure rules engine: Rules 1–5 and the expert completeness check (no Streamlit)
 services.py       Workflow: applies the rules to the database and writes the audit log
 db.py             SQLite schema, SHA-256 source records, append-only hash-chained audit log

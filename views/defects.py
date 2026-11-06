@@ -19,7 +19,17 @@ st.info("**Rule 5 – Reassessment.** Saving a new or updated defect record re-r
 result = st.session_state.pop("rule5_result", None)
 if result:
     st.success(result["message"])
+    summary = result.get("summary")
+    if summary:
+        a, b, c = st.columns(3)
+        a.metric("Cases screened", summary["cases_screened"])
+        b.metric("Cases flagged for inquiry", summary["affected"])
+        c.metric("Reassessments created", summary["reassessment_tasks"])
+    st.caption("Inquiry tasks and reassessment tasks are counted separately. Earlier decisions remain preserved.")
     flagged = [r for r in result["rows"] if r["tasks_created"] != "—" or r["result"] != R.RESULT_LABELS[R.NO_MATCH]]
+    for row in flagged:
+        st.link_button(f"Open {row['case_id']} ({row['status']}) and its follow-up",
+                       f"case?case={row['case_id']}&tab=tasks#case-actions")
     ui.table(flagged or result["rows"], [("case_id", "Case"), ("status", "Status"), ("result", "Result"),
                                          ("previous", "Previous"), ("tasks_created", "Tasks created"),
                                          ("explanation", "Explanation")], nowrap=("case_id", "result"))
@@ -64,13 +74,19 @@ if ui.allowed(R.SUPPLIER_LIAISON, R.TECH_REVIEWER, R.LEGAL_LEAD, action="load de
 
     def save(records: list[dict], source_file: str) -> None:
         messages, all_rows = [], []
+        totals = {key: 0 for key in ("cases_screened", "linked", "manual", "reassessment_tasks")}
         for rec in records:
             out = S.load_defect(conn, me, ui.now(), rec, source_file=source_file)
             if not out.ok:
                 ui.flash(out)
             messages.append(f"{rec['defect_id']}: {out.message}")
             all_rows += out.data["rows"]
-        st.session_state["rule5_result"] = {"message": " ".join(messages), "rows": all_rows}
+            for key in totals:
+                totals[key] += out.data[key]
+        totals["cases_screened"] = len({row["case_id"] for row in all_rows})
+        totals["affected"] = len({row["case_id"] for row in all_rows
+                                  if row["result"] != R.RESULT_LABELS[R.NO_MATCH]})
+        st.session_state["rule5_result"] = {"message": " ".join(messages), "rows": all_rows, "summary": totals}
         st.rerun()
 
     with t_demo:

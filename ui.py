@@ -83,7 +83,8 @@ KIND = {
 
 def get_conn():
     if not db.DEFAULT_DB_PATH.exists():
-        seed.build(db.DEFAULT_DB_PATH)
+        with st.spinner("Building the synthetic demo data (first load only)…"):
+            seed.ensure(db.DEFAULT_DB_PATH)
     return db.connect(db.DEFAULT_DB_PATH)
 
 

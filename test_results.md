@@ -1,6 +1,6 @@
 # CERT – Test results (report Table 4.6 and Section 4.2.7)
 
-Generated 01 Nov 2026 23:26 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
+Generated 07 Nov 2026 01:19 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
 
 ## Table 4.6 – Test conditions, expected and observed outcomes
 
@@ -80,12 +80,14 @@ Generated 01 Nov 2026 23:26 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_source_record_hash_detects_out_of_band_change` | **PASSED** |
 | `test_wording_never_claims_cause_or_reliability` | **PASSED** |
 | `test_metrics_meet_design_targets` | **PASSED** |
-| `test_page_renders[pages/case_list.py]` | **PASSED** |
-| `test_page_renders[pages/case_view.py]` | **PASSED** |
-| `test_page_renders[pages/defects.py]` | **PASSED** |
-| `test_page_renders[pages/dashboard.py]` | **PASSED** |
-| `test_page_renders[pages/audit_log.py]` | **PASSED** |
-| `test_page_renders[pages/about.py]` | **PASSED** |
+| `test_page_renders[views/case_list.py]` | **PASSED** |
+| `test_page_renders[views/case_view.py]` | **PASSED** |
+| `test_page_renders[views/defects.py]` | **PASSED** |
+| `test_page_renders[views/dashboard.py]` | **PASSED** |
+| `test_page_renders[views/audit_log.py]` | **PASSED** |
+| `test_page_renders[views/about.py]` | **PASSED** |
+| `test_page_renders[views/demo.py]` | **PASSED** |
+| `test_page_renders[views/test_results.py]` | **PASSED** |
 | `test_case_view_renders[C001]` | **PASSED** |
 | `test_case_view_renders[C003]` | **PASSED** |
 | `test_case_view_renders[C005]` | **PASSED** |
@@ -96,6 +98,11 @@ Generated 01 Nov 2026 23:26 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_case_view_renders[C010]` | **PASSED** |
 | `test_case_view_renders[C011]` | **PASSED** |
 | `test_case_view_renders[C014]` | **PASSED** |
+| `test_saved_report_metrics_and_scenarios` | **PASSED** |
+| `test_missing_report_explains_refresh` | **PASSED** |
+| `test_case_deep_link_selects_reliance_tab` | **PASSED** |
+| `test_results_page_shows_saved_evidence` | **PASSED** |
+| `test_loading_later_defect_reports_two_reassessments` | **PASSED** |
 
 ## Interpretation
 

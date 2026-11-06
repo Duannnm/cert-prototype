@@ -8,8 +8,8 @@ import db
 import seed
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ["pages/case_list.py", "pages/case_view.py", "pages/defects.py", "pages/dashboard.py",
-         "pages/audit_log.py", "pages/about.py"]
+PAGES = ["views/case_list.py", "views/case_view.py", "views/defects.py", "views/dashboard.py",
+         "views/audit_log.py", "views/about.py", "views/demo.py", "views/test_results.py"]
 
 
 @pytest.fixture
@@ -30,6 +30,6 @@ def test_page_renders(app, page):
 @pytest.mark.parametrize("case_id", ["C001", "C003", "C005", "C006", "C007", "C008", "C009", "C010", "C011", "C014"])
 def test_case_view_renders(app, case_id):
     app.session_state["case_id"] = case_id
-    app.switch_page("pages/case_view.py").run()
+    app.switch_page("views/case_view.py").run()
     assert not app.exception
     assert any(case_id in m.value for m in app.markdown)

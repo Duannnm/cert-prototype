@@ -54,63 +54,88 @@ ui.kv(facts)
 ui.stepper(case["stage"], escalated, case["status"] == "closed")
 ui.gate_banner(gate)
 
+st.subheader("Next actions and accountable owners")
+required = [t for t in open_tasks if t["required"] or t["type"] == "Independent review"]
+if required:
+    ui.table([{"task": t["task_id"], "action": t["title"],
+               "owner": S.user_name(conn, t["owner"]),
+               "escalation": escalations[t["task_id"]].label,
+               "decision": t["linked_to"] or "—"} for t in required],
+             [("task", "Task"), ("action", "Required next action"), ("owner", "Accountable owner"),
+              ("escalation", "Escalation"), ("decision", "Earlier decision")])
+else:
+    st.caption("No required follow-up task is open. The reliance gate still determines whether an action is permitted.")
+if gate.blocked:
+    st.caption("An uninvolved independent legal reviewer must assess the current evidence and record a reasoned "
+               "decision before reliance can proceed. Completing tasks alone does not clear the gate.")
+st.markdown("[Open task actions](?case=" + case_id + "&tab=tasks#case-actions) · "
+            "[Open review](?case=" + case_id + "&tab=review#case-actions) · "
+            "[Open reliance controls](?case=" + case_id + "&tab=reliance#case-actions)")
+
 if case["spm_explanation"]:
     st.markdown(f"<div class='quote'><b>SPM explanation.</b> {ui.esc(case['spm_explanation'])}</div>",
                 unsafe_allow_html=True)
 
-# --- Evidence coverage (Rule 2) -----------------------------------------------------
-st.subheader("Evidence coverage")
-st.caption("Rule 2 checklist. Partial coverage of the disputed period is a Gap; Unknown is never dropped.")
-follow = {t["item_type"]: t for t in open_tasks if t["item_type"]}
-exceptions = {e["item_type"]: e for e in S.case_exceptions(conn, case_id)}
-rows = []
-for i in items:
-    task = follow.get(i["item_type"])
-    note = f"{task['task_id']} · {S.user_name(conn, task['owner'])}" if task else ""
-    ex = exceptions.get(i["item_type"])
-    if ex and i["status"] in (R.GAP, R.UNKNOWN):
-        note = (note + "; " if note else "") + f"Exception {ex['exception_id']} {ex['status'].lower()}"
-    rows.append({"item": i["item_type"], "status": ui.chip(i["status"]), "period": i["period_covered"],
-                 "reason": i["reason"], "owner": i["owner"], "follow": note})
-ui.table(rows, [("item", "Required item"), ("status", "Status"), ("period", "Period covered / scope"),
-                ("reason", "Reason"), ("owner", "Owner"), ("follow", "Follow-up")], raw=("status",),
-         nowrap=("item", "status"), wide=("reason",))
+with st.expander("Evidence coverage, defect links and expert checks", expanded=False):
+    # --- Evidence coverage (Rule 2) -----------------------------------------------------
+    st.subheader("Evidence coverage")
+    st.caption("Rule 2 checklist. Partial coverage of the disputed period is a Gap; Unknown is never dropped.")
+    follow = {t["item_type"]: t for t in open_tasks if t["item_type"]}
+    exceptions = {e["item_type"]: e for e in S.case_exceptions(conn, case_id)}
+    rows = []
+    for i in items:
+        task = follow.get(i["item_type"])
+        note = f"{task['task_id']} · {S.user_name(conn, task['owner'])}" if task else ""
+        ex = exceptions.get(i["item_type"])
+        if ex and i["status"] in (R.GAP, R.UNKNOWN):
+            note = (note + "; " if note else "") + f"Exception {ex['exception_id']} {ex['status'].lower()}"
+        rows.append({"item": i["item_type"], "status": ui.chip(i["status"]), "period": i["period_covered"],
+                     "reason": i["reason"], "owner": i["owner"], "follow": note})
+    ui.table(rows, [("item", "Required item"), ("status", "Status"), ("period", "Period covered / scope"),
+                    ("reason", "Reason"), ("owner", "Owner"), ("follow", "Follow-up")], raw=("status",),
+             nowrap=("item", "status"), wide=("reason",))
 
-# --- Defect links (Rule 1) ------------------------------------------------------------
-st.subheader("Defect links")
-st.caption("Rule 1 matches branch scope, the defect's affected period (not its report date) and Horizon version. "
-           "A link requires inquiry; it does not establish causation.")
-if not any(l["result"] != R.NO_MATCH for l in links):
-    st.markdown(f"{ui.chip(R.NO_KNOWN_DEFECT, 'grey')} <span class='muted'>This is not confirmation that "
-                "Horizon was reliable: records may be incomplete or faults unknown.</span>", unsafe_allow_html=True)
-ui.table([{"defect": l["defect_id"], "result": ui.chip(R.RESULT_LABELS[l["result"]], ui.KIND[l["result"]]),
-           "matched": ", ".join(l["matched_fields"]) or "—", "explanation": l["explanation"],
-           "inquiry": l["inquiry_status"] + (f": {l['inquiry_finding']}" if l["inquiry_finding"] else "")}
-          for l in links],
-         [("defect", "Defect"), ("result", "Result"), ("matched", "Fields matched"),
-          ("explanation", "Explanation"), ("inquiry", "Inquiry")], raw=("result",), nowrap=("defect", "result"),
-         wide=("explanation",))
+    # --- Defect links (Rule 1) ------------------------------------------------------------
+    st.subheader("Defect links")
+    st.caption("Rule 1 matches branch scope, the defect's affected period (not its report date) and Horizon version. "
+               "A link requires inquiry; it does not establish causation.")
+    if not any(l["result"] != R.NO_MATCH for l in links):
+        st.markdown(f"{ui.chip(R.NO_KNOWN_DEFECT, 'grey')} <span class='muted'>This is not confirmation that "
+                    "Horizon was reliable: records may be incomplete or faults unknown.</span>", unsafe_allow_html=True)
+    ui.table([{"defect": l["defect_id"], "result": ui.chip(R.RESULT_LABELS[l["result"]], ui.KIND[l["result"]]),
+               "matched": ", ".join(l["matched_fields"]) or "—", "explanation": l["explanation"],
+               "inquiry": l["inquiry_status"] + (f": {l['inquiry_finding']}" if l["inquiry_finding"] else "")}
+              for l in links],
+             [("defect", "Defect"), ("result", "Result"), ("matched", "Fields matched"),
+              ("explanation", "Explanation"), ("inquiry", "Inquiry")], raw=("result",), nowrap=("defect", "result"),
+             wide=("explanation",))
 
-# --- Expert completeness check -------------------------------------------------------
-st.subheader("Expert completeness check")
-statements = S.statements(conn, case_id)
-checks = S.expert_checks(conn, case_id)
-if not statements:
-    st.markdown("<div class='muted'>No expert statement is relied on in this case.</div>", unsafe_allow_html=True)
-else:
-    ui.table([{"st": f"{s['statement_id']} v{s['version']}", "author": s["author"],
-               "addr": ", ".join(s["linked_defects"]) or "none", "summary": s["summary"],
-               "on": ui.short_ts(s["submitted_on"])} for s in statements],
-             [("st", "Statement"), ("author", "Author"), ("addr", "Defects addressed"), ("summary", "Summary"),
-              ("on", "Received")], nowrap=("st", "on"))
-    ui.table([{"id": c["check_id"], "st": f"{c['statement_id']} v{c['statement_version']}",
-               "by": S.user_name(conn, c["checker"]), "rel": ", ".join(c["relevant_defects"]) or "none",
-               "om": ui.chip("Omits " + ", ".join(c["omissions"]), "amber") if c["omissions"] else ui.chip("None", "green"),
-               "status": c["correction_status"], "on": ui.short_ts(c["checked_on"])} for c in checks],
-             [("id", "Check"), ("st", "Statement"), ("by", "Technical reviewer"), ("rel", "Linked defects compared"),
-              ("om", "Omissions"), ("status", "Correction"), ("on", "Date")], raw=("om",), nowrap=("id", "on"))
+    # --- Expert completeness check -------------------------------------------------------
+    st.subheader("Expert completeness check")
+    statements = S.statements(conn, case_id)
+    checks = S.expert_checks(conn, case_id)
+    if not statements:
+        st.markdown("<div class='muted'>No expert statement is relied on in this case.</div>", unsafe_allow_html=True)
+    else:
+        ui.table([{"st": f"{s['statement_id']} v{s['version']}", "author": s["author"],
+                   "addr": ", ".join(s["linked_defects"]) or "none", "summary": s["summary"],
+                   "on": ui.short_ts(s["submitted_on"])} for s in statements],
+                 [("st", "Statement"), ("author", "Author"), ("addr", "Defects addressed"), ("summary", "Summary"),
+                  ("on", "Received")], nowrap=("st", "on"))
+        ui.table([{"id": c["check_id"], "st": f"{c['statement_id']} v{c['statement_version']}",
+                   "by": S.user_name(conn, c["checker"]), "rel": ", ".join(c["relevant_defects"]) or "none",
+                   "om": ui.chip("Omits " + ", ".join(c["omissions"]), "amber") if c["omissions"] else ui.chip("None", "green"),
+                   "status": c["correction_status"], "on": ui.short_ts(c["checked_on"])} for c in checks],
+                 [("id", "Check"), ("st", "Statement"), ("by", "Technical reviewer"), ("rel", "Linked defects compared"),
+                  ("om", "Omissions"), ("status", "Correction"), ("on", "Date")], raw=("om",), nowrap=("id", "on"))
 
 # --- Tabs ------------------------------------------------------------------------------
+st.markdown('<div id="case-actions"></div>', unsafe_allow_html=True)
+requested_tab = st.query_params.get("tab")
+tab_names = {"tasks": "Tasks & escalation", "review": "Independent review", "reliance": "Reliance & exceptions"}
+if requested_tab in tab_names:
+    st.session_state["case_tabs"] = tab_names[requested_tab]
+    del st.query_params["tab"]
 t_tasks, t_review, t_rely, t_supply, t_expert, t_help, t_hist = st.tabs([
     "Tasks & escalation", "Independent review", "Reliance & exceptions",
     "Supplier evidence", "Expert statement actions", "Helpline records", "Case history"], key="case_tabs")

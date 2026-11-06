@@ -57,7 +57,7 @@ else:
         case_id = df.iloc[event.selection.rows[0]]["Case"]
         del st.session_state["case_table"]
         st.session_state["case_id"] = case_id
-        st.switch_page("pages/case_view.py", query_params={"case": case_id})
+        st.switch_page("views/case_view.py", query_params={"case": case_id})
 
 left, right = st.columns(2)
 with left:

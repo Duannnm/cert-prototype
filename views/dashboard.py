@@ -9,6 +9,17 @@ today = ui.today()
 ui.header("Oversight dashboard", f"Key risk indicators (Table 4.4) at {R.fmt_date(today)} · synthetic records")
 ui.render_flash()
 
+with st.expander("Who acts on these indicators?", expanded=True):
+    st.write("**Evidence gaps:** the supplier liaison retrieves missing records and documents availability. "
+             "The legal lead resolves overdue requests and the Committee challenges persistent delay.")
+    st.write("**Closed cases awaiting reassessment:** the assigned independent reviewer assesses new evidence "
+             "against the earlier decision. The Committee follows up overdue reassessments.")
+    st.write("**Blocked self-review attempts:** internal audit investigates the attempted conflict and "
+             "checks that an uninvolved reviewer has the evidence and authority to act.")
+    st.caption("Routine delay: legal lead at 10 working days, Committee at 20. "
+               "Urgent concerns escalate immediately. These are proposed service standards, not statutory periods.")
+    st.page_link("views/test_results.py", label="See saved control-test results", icon=":material/checklist:")
+
 overview = S.case_overview(conn, today)
 escalations = S.open_escalations(conn, today)
 open_required = sum(t["required"] for t in S.case_tasks(conn, open_only=True))

@@ -11,7 +11,9 @@ page; SAMPLE_LATER_DEFECT holds it.
 """
 from __future__ import annotations
 
+import os
 import sys
+import threading
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -105,14 +107,36 @@ class Timeline:
         return when
 
 
+_BUILD_LOCK = threading.RLock()
+
+
 def build(path: str | Path = db.DEFAULT_DB_PATH) -> Path:
+    """Build the demo database in a temporary file, then swap it in atomically.
+
+    Visitors never see a half-built database, and concurrent first visitors on a
+    hosted deployment cannot build it at the same time. Durability pragmas are
+    off during the build because a failed build is simply rebuilt.
+    """
     path = Path(path)
-    if path.exists():
-        path.unlink()
-    conn = db.connect(path)
-    db.init_db(conn)
-    populate(conn)
-    conn.close()
+    with _BUILD_LOCK:
+        tmp = path.with_name(path.name + ".building")
+        tmp.unlink(missing_ok=True)
+        conn = db.connect(tmp)
+        conn.execute("PRAGMA synchronous = OFF")
+        conn.execute("PRAGMA journal_mode = MEMORY")
+        db.init_db(conn)
+        populate(conn)
+        conn.close()
+        os.replace(tmp, path)
+    return path
+
+
+def ensure(path: str | Path = db.DEFAULT_DB_PATH) -> Path:
+    """Build the demo database only if it does not exist yet."""
+    path = Path(path)
+    with _BUILD_LOCK:
+        if not path.exists():
+            build(path)
     return path
 
 
