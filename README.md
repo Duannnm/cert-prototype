@@ -69,6 +69,25 @@ as red placeholders.
 
 ## Using the demo
 
+### Clearance verification and independent oversight
+
+POL staff remain the operational users. **Oversight → Clearance verification** simulates a recovery or legal
+system requiring a clearance reference. Requesting one for C014 is refused. C001 can receive a clearance,
+which permits only the specified action under its current evidence version and independent review. Verifying
+a fabricated reference, a different case/action, or a clearance superseded by evidence or review changes fails.
+Issuance and verification are audited. The simulation performs no real recovery or legal action.
+
+**Oversight → Oversight export** lets Internal audit or the Legal lead prepare a ZIP of registered case
+snapshots, tasks, decisions, exceptions, gate attempts, defect links, the audit history and integrity checks.
+The manifest includes timestamps and file fingerprints. This is a downloadable snapshot, not automatic
+regulatory reporting or a signed, externally anchored record. An authorised independent overseer would need
+protected delivery, retention and evidence access. Separate recovery/legal registers are required to detect
+cases omitted from CERT. Production downstream systems must enforce clearance checking atomically with
+their actions, with authenticated access. Optional checks can be bypassed.
+
+The updated **Demo walkthrough** includes these screens within 6:30. Keep the original integrity tampering
+exercise for Q&A if time permits. KEL-D07 does not affect C001 and therefore does not invalidate its clearance.
+
 For the presentation, open **Oversight → Demo walkthrough**. It links to each step of the
 6:30 demonstration and shows whether KEL-D07 is already loaded. Navigation does not change
 roles or load records automatically. Switch roles explicitly in the sidebar.

@@ -9,7 +9,8 @@ import seed
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = ["views/case_list.py", "views/case_view.py", "views/defects.py", "views/dashboard.py",
-         "views/audit_log.py", "views/about.py", "views/demo.py", "views/test_results.py"]
+         "views/audit_log.py", "views/about.py", "views/demo.py", "views/test_results.py",
+         "views/clearance.py", "views/oversight_export.py"]
 
 
 @pytest.fixture

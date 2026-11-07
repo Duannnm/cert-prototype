@@ -20,6 +20,8 @@ pages = {
         st.Page("views/defects.py", title="Defect records", icon=":material/bug_report:", url_path="defects"),
     ],
     "Oversight": [
+        st.Page("views/clearance.py", title="Clearance verification", icon=":material/verified:", url_path="clearance"),
+        st.Page("views/oversight_export.py", title="Oversight export", icon=":material/archive:", url_path="oversight-export"),
         st.Page("views/demo.py", title="Demo walkthrough", icon=":material/slideshow:", url_path="demo"),
         st.Page("views/test_results.py", title="Test results", icon=":material/checklist:", url_path="tests"),
         st.Page("views/dashboard.py", title="Oversight dashboard", icon=":material/monitoring:",

@@ -55,6 +55,7 @@ st.subheader("Control operation: reliance gate and independence")
 st.caption("Evidence that the controls operate, for internal audit to sample against source records.")
 attempts = S.gate_attempts(conn)
 labels = {"reliance": "Reliance actions", "self_review": "Self-review attempts", "review": "Other review attempts",
+          "clearance_issue": "Clearance issuance refusals", "clearance_verification": "Downstream clearance checks",
           "exception_proposal": "Exception proposals", "exception_authorisation": "Exception authorisations"}
 summary = []
 for cat, label in labels.items():

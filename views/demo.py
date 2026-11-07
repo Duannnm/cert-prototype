@@ -10,18 +10,18 @@ loaded = S.get_defect(ui.conn(), "KEL-D07") is not None
 st.info("KEL-D07 is already loaded. Reset demo data in the sidebar before rehearsing the full sequence."
         if loaded else "KEL-D07 has not been loaded. The later-evidence scenario is ready.")
 steps = [
-    ("0:00–1:40 · Identify uncertainty", "Investigator · A. Tan", "case?case=C014",
+    ("0:00–1:00 · Identify uncertainty", "Investigator · A. Tan", "case?case=C014",
      "Open C014. Show the gate, evidence coverage and next actions. ARQ covers four of six weeks, and the expert statement omits KEL-D01."),
-    ("1:40–2:30 · Test the reliance control", "Investigator · A. Tan", "case?case=C014&tab=reliance",
-     "In Reliance & exceptions, attempt Issue recovery demand. Show the blocked attempt and recorded reasons."),
-    ("2:30–3:35 · Introduce later evidence", "Supplier liaison manager · M. Okafor", "defects",
+    ("1:00–2:20 · Verify before downstream action", "Investigator · A. Tan", "clearance",
+     "Request clearance for C014: refused. Select C001, request clearance and verify it: the simulated action may proceed. Change the requested action and verify the same reference again: refused. Explain that production systems must require this check."),
+    ("2:20–3:25 · Introduce later evidence", "Supplier liaison manager · M. Okafor", "defects",
      "Switch role, load KEL-D07 in the demo tab, then open C014 and closed case C011 from the result. Explain why earlier decisions need reassessment."),
-    ("3:35–4:25 · Show oversight", "Any demo role", "dashboard",
+    ("3:25–4:05 · Show oversight", "Any demo role", "dashboard",
      "Highlight evidence gaps, closed cases awaiting reassessment and blocked self-review attempts. Identify who must act and the escalation threshold."),
-    ("4:25–5:10 · Check integrity", "Internal audit · H. Ng", "audit",
-     "Verify hashes, expand the demo edit, simulate the change, then verify again. Hashes detect change after receipt but cannot prove the original record true."),
-    ("5:10–6:10 · Show test evidence", "Any demo role", "tests",
-     "Show the saved evaluation date, sample sizes, nine scenarios and precision. Leave twenty seconds for the limitation and handover."),
+    ("4:05–5:05 · Prepare independent scrutiny", "Internal audit · H. Ng", "oversight-export",
+     "Prepare the oversight package and point to its manifest. It carries decisions, exceptions, clearance attempts and audit evidence for independent inspection. Download it if needed. No regulator receives it automatically. Explain that separate registers are needed to find omitted cases."),
+    ("5:05–6:10 · Show test evidence", "Any demo role", "tests",
+     "Show the saved evaluation date, sample sizes, nine core scenarios and supporting assurance tests. Close: POL operates CERT, while mandatory integration and authorised independent scrutiny address bypass incentives. Leave twenty seconds for handover."),
 ]
 for title, role, url, action in steps:
     st.subheader(title)
@@ -30,3 +30,9 @@ for title, role, url, action in steps:
     st.link_button("Open this step", url)
 st.caption("Navigation opens the target page without changing your role or loading evidence. "
            "The sidebar role switcher simulates identity. Reset discards demo edits for every visitor.")
+with st.expander("Optional Q&A: stale clearance and integrity"):
+    st.write("To show evidence invalidation, first issue a clearance for C001, then load a defect whose scope "
+             "actually affects C001. Verification of the earlier reference will fail. KEL-D07 affects C014 "
+             "and C011, so it does not invalidate C001's clearance. Avoid improvising this data-entry step "
+             "in the timed demo. Automated tests cover this transition.")
+    st.link_button("Open integrity checks", "audit")

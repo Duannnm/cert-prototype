@@ -1,6 +1,6 @@
 # CERT – Test results (report Table 4.6 and Section 4.2.7)
 
-Generated 07 Nov 2026 01:19 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
+Generated 08 Nov 2026 02:10 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
 
 ## Table 4.6 – Test conditions, expected and observed outcomes
 
@@ -76,6 +76,13 @@ Generated 07 Nov 2026 01:19 by `python evaluation.py` · Python 3.14.6 · pytest
 
 | Test | Result |
 |---|---|
+| `test_clearance_requires_clear_gate_and_authorised_role` | **PASSED** |
+| `test_clearance_checks_case_action_and_reference` | **PASSED** |
+| `test_later_evidence_invalidates_clearance` | **PASSED** |
+| `test_new_review_invalidates_old_clearance` | **PASSED** |
+| `test_oversight_export_permissions_and_fingerprints` | **PASSED** |
+| `test_clearance_page_rejects_c014_and_accepts_c001` | **PASSED** |
+| `test_oversight_page_prepares_snapshot_for_auditor` | **PASSED** |
 | `test_audit_log_is_append_only_and_chained` | **PASSED** |
 | `test_source_record_hash_detects_out_of_band_change` | **PASSED** |
 | `test_wording_never_claims_cause_or_reliability` | **PASSED** |
@@ -88,6 +95,8 @@ Generated 07 Nov 2026 01:19 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_page_renders[views/about.py]` | **PASSED** |
 | `test_page_renders[views/demo.py]` | **PASSED** |
 | `test_page_renders[views/test_results.py]` | **PASSED** |
+| `test_page_renders[views/clearance.py]` | **PASSED** |
+| `test_page_renders[views/oversight_export.py]` | **PASSED** |
 | `test_case_view_renders[C001]` | **PASSED** |
 | `test_case_view_renders[C003]` | **PASSED** |
 | `test_case_view_renders[C005]` | **PASSED** |
