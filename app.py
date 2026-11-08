@@ -4,6 +4,10 @@ Run locally:  pip install -r requirements.txt && streamlit run app.py
 """
 import streamlit as st
 
+from app_bootstrap import prepare_app_modules
+
+prepare_app_modules()
+
 import services as S
 import ui
 import access

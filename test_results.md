@@ -1,6 +1,6 @@
 # CERT – Test results (report Table 4.6 and Section 4.2.7)
 
-Generated 09 Nov 2026 02:17 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
+Generated 09 Nov 2026 02:29 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
 
 ## Table 4.6 – Test conditions, expected and observed outcomes
 
@@ -128,6 +128,8 @@ Generated 09 Nov 2026 02:17 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_case_deep_link_selects_reliance_tab` | **PASSED** |
 | `test_results_page_shows_saved_evidence` | **PASSED** |
 | `test_loading_later_defect_reports_two_reassessments` | **PASSED** |
+| `test_startup_recovers_cached_old_rules_and_services` | **PASSED** |
+| `test_current_modules_are_not_reloaded` | **PASSED** |
 
 ## Interpretation
 
