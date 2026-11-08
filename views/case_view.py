@@ -6,10 +6,17 @@ import services as S
 import ui
 
 conn = ui.conn()
-cases = S.list_cases(conn)
+cases = S.visible_cases(conn, ui.actor())
 ids = [c["case_id"] for c in cases]
+if not ids:
+    st.info("No cases are assigned to this investigator yet.")
+    st.stop()
 requested = st.query_params.get("case") or st.session_state.get("case_id") or "C014"
 if requested not in ids:
+    if st.query_params.get("case"):
+        st.warning("This case is outside your permitted scope. Choose one of your assigned cases.")
+        st.page_link("views/case_list.py", label="Open your case list")
+        st.stop()
     requested = ids[0]
 
 top_l, top_r = st.columns([3, 1])
@@ -183,7 +190,7 @@ with t_tasks:
     open_esc = [t for t in open_tasks if t["type"] == "Escalation"]
     if open_esc:
         st.markdown("**Resolve an escalation**")
-        if ui.allowed(R.LEGAL_LEAD, R.AUDIT, action="resolve escalations"):
+        if ui.allowed(R.LEGAL_LEAD, R.COMMITTEE, action="resolve escalations"):
             with st.form("escalation"):
                 task_id = st.selectbox("Escalation", [t["task_id"] for t in open_esc],
                                        format_func=lambda x: next(f"{x} – {t['title']}" for t in open_esc
@@ -193,16 +200,38 @@ with t_tasks:
                     ui.flash(S.acknowledge_escalation(conn, me, ui.now(), task_id, note))
 
     reassess = [t for t in open_tasks if t["type"] == "Reassessment"]
+    referral_tasks = [t for t in open_tasks if t["type"] == "Referral follow-up"]
+    if referral_tasks and ui.can("record_referral_followup"):
+        with st.form("referral_followup"):
+            st.markdown("**Record referral receipt and follow-through**")
+            task_id = st.selectbox("Referral task", [t["task_id"] for t in referral_tasks])
+            evidence = st.text_area("Recipient, receipt reference, response or documented next step")
+            if st.form_submit_button("Record referral follow-through"):
+                ui.flash(S.record_referral_followup(conn, me, ui.now(), task_id, evidence))
     if reassess:
+        st.caption("CERT screens cases automatically. Investigators and technical reviewers investigate the link; "
+                   "the assigned uninvolved legal reviewer reassesses the earlier decision. The original reviewer "
+                   "cannot complete their own reassessment. Referral may record unresolved concerns; no-referral "
+                   "closure requires the other required inquiries and evidence gaps to be resolved.")
+        if ui.can("assign_reassessment"):
+            with st.form("assign_reassessment"):
+                task_id = st.selectbox("Task to assign", [t["task_id"] for t in reassess])
+                candidates = [u for u in S.list_users(conn) if u.role == R.LEGAL_REVIEWER]
+                reviewer = st.selectbox("Assign independent reviewer", [u.user_id for u in candidates],
+                                        format_func=lambda uid: S.user_name(conn, uid))
+                if st.form_submit_button("Assign reviewer"):
+                    ui.flash(S.assign_reassessment(conn, me, ui.now(), task_id, reviewer))
         st.markdown("**Complete a reassessment** (the original decision is preserved unchanged)")
         if ui.allowed(R.LEGAL_REVIEWER, action="complete a reassessment"):
             with st.form("reassess"):
-                task_id = st.selectbox("Reassessment", [t["task_id"] for t in reassess])
-                outcome = st.radio("Outcome", ["Refer earlier decision for review (prosecutor / appeal route)",
-                                               "No referral required – reasons recorded"])
+                mine = [t["task_id"] for t in reassess if t["owner"] == me.user_id]
+                if not mine:
+                    st.info("No reassessment here is assigned to you. Ask an uninvolved legal lead or Committee member to assign it.")
+                task_id = st.selectbox("Reassessment", mine)
+                outcome = st.radio("Outcome", [S.REASSESS_REFER, S.REASSESS_NO_REFERRAL])
                 reasons = st.text_area("Reasons")
                 declared = st.checkbox("I declare no prior involvement in this case")
-                if st.form_submit_button("Record reassessment", type="primary"):
+                if st.form_submit_button("Record reassessment", type="primary", disabled=not mine):
                     ui.flash(S.complete_reassessment(conn, me, ui.now(), task_id, outcome=outcome, reasons=reasons,
                                                      declared_no_involvement=declared))
 
@@ -216,7 +245,7 @@ with t_review:
              [("id", "Review"), ("by", "Reviewer"), ("decl", "Conflict declaration"), ("ver", "Evidence"),
               ("decision", "Decision"), ("reasons", "Reasons"), ("exc", "Exception"), ("on", "Date")],
              nowrap=("id", "on"))
-    if case["status"] == "active" and me.role != R.AUDIT:
+    if case["status"] == "active" and ui.can("record_review"):
         st.markdown("**Record an independent review (Stage 5)**")
         involved = ", ".join(S.user_name(conn, u) for u in case["involved_users"])
         st.caption(f"Human-in-the-loop control: only an independent legal reviewer with no prior involvement may "
@@ -235,8 +264,8 @@ with t_review:
 with t_rely:
     st.markdown("**Reliance actions** (Rule 3 gate)")
     st.caption("Every attempt is evaluated against the gate and logged, whether permitted or blocked.")
-    if me.role == R.AUDIT:
-        st.caption("Internal audit has read-only access.")
+    if not ui.can("attempt_reliance"):
+        st.caption("Your role can inspect reliance decisions but cannot perform reliance actions.")
     else:
         b1, b2, _ = st.columns([1, 1.4, 1])
         for col, action in zip((b1, b2), R.RELIANCE_ACTIONS):

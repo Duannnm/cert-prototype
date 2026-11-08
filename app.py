@@ -6,6 +6,7 @@ import streamlit as st
 
 import services as S
 import ui
+import access
 
 st.set_page_config(page_title="CERT – Case Evidence Review Tracker", page_icon="⚖️", layout="wide")
 
@@ -13,22 +14,23 @@ ui.init()
 ui.sidebar()
 S.run_escalation_sweep(ui.conn(), ui.now())
 
-pages = {
-    "Casework": [
-        st.Page("views/case_list.py", title="Case list", icon=":material/folder_open:", default=True),
-        st.Page("views/case_view.py", title="Case view", icon=":material/gavel:", url_path="case"),
-        st.Page("views/defects.py", title="Defect records", icon=":material/bug_report:", url_path="defects"),
-    ],
-    "Oversight": [
-        st.Page("views/clearance.py", title="Clearance verification", icon=":material/verified:", url_path="clearance"),
-        st.Page("views/oversight_export.py", title="Oversight export", icon=":material/archive:", url_path="oversight-export"),
-        st.Page("views/demo.py", title="Demo walkthrough", icon=":material/slideshow:", url_path="demo"),
-        st.Page("views/test_results.py", title="Test results", icon=":material/checklist:", url_path="tests"),
-        st.Page("views/dashboard.py", title="Oversight dashboard", icon=":material/monitoring:",
-                url_path="dashboard"),
-        st.Page("views/audit_log.py", title="Audit log & integrity", icon=":material/fact_check:",
-                url_path="audit"),
-        st.Page("views/about.py", title="About & limitations", icon=":material/info:", url_path="about"),
-    ],
+definitions = {
+    "Casework": [("case_list", "Case list", "folder_open", ""),
+                 ("case_view", "Case view", "gavel", "case"),
+                 ("defects", "Defect records", "bug_report", "defects"),
+                 ("clearance", "Clearance verification", "verified", "clearance")],
+    "Oversight": [("dashboard", "Oversight dashboard", "monitoring", "dashboard"),
+                  ("oversight_export", "Oversight export", "archive", "oversight-export"),
+                  ("audit_log", "Audit log & integrity", "fact_check", "audit")],
+    "Demo & guidance": [("demo", "Demo walkthrough", "slideshow", "demo"),
+                        ("test_results", "Test results", "checklist", "tests"),
+                        ("about", "About & limitations", "info", "about")],
 }
+pages = {}
+for group, entries in definitions.items():
+    permitted = [st.Page(f"views/{name}.py", title=title, icon=f":material/{icon}:",
+                         default=name == "case_list", url_path=url or None)
+                 for name, title, icon, url in entries if access.page_allowed(ui.actor(), name)]
+    if permitted:
+        pages[group] = permitted
 st.navigation(pages).run()

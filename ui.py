@@ -10,6 +10,7 @@ import db
 import rules as R
 import seed
 import services as S
+import access
 
 NAVY = "#16486f"
 STAGES = ["Register", "Link defects", "Check coverage", "Investigate", "Review", "Escalate", "Reassess"]
@@ -85,7 +86,9 @@ def get_conn():
     if not db.DEFAULT_DB_PATH.exists():
         with st.spinner("Building the synthetic demo data (first load only)…"):
             seed.ensure(db.DEFAULT_DB_PATH)
-    return db.connect(db.DEFAULT_DB_PATH)
+    connection = db.connect(db.DEFAULT_DB_PATH)
+    S.configure_demo_roles(connection)
+    return connection
 
 
 def conn():
@@ -118,16 +121,18 @@ def sidebar() -> None:
             st.session_state["user_id"] = options[0]
         names = {u.user_id: u.name + (" (external)" if u.is_external else "") for u in users}
         st.selectbox("Named user", options, key="user_id", format_func=names.get)
+        st.caption("Your role controls navigation and permitted actions. Investigators see assigned/involved cases; "
+                   "other roles have all registered synthetic cases in this demo.")
         st.caption("Role switching stands in for logins; production would need real identity controls.")
         st.markdown("**Demo clock**")
         st.date_input("Demo date", key="demo_date", min_value=date(2013, 1, 1), max_value=date(2014, 12, 31),
-                      format="DD/MM/YYYY", label_visibility="collapsed")
+                      format="DD/MM/YYYY", label_visibility="collapsed", disabled=role in (R.OVERSEER, R.COMMITTEE))
         st.caption("Working-day escalations use this date. Proposed service standards: deadline within "
                    "5 WD → immediate; 10 WD → legal lead; 20 WD → Committee.")
-        with st.popover("Reset demo data", width="stretch"):
+        with st.popover("Reset demo data (presentation only)", width="stretch", disabled=role in (R.OVERSEER, R.COMMITTEE)):
             st.write("Rebuild the database from the synthetic seed. Every change made in the app is discarded "
                      "and every visitor sees the same starting state.")
-            if st.button("Confirm reset", type="primary"):
+            if st.button("Confirm reset", type="primary", disabled=role in (R.OVERSEER, R.COMMITTEE)):
                 c.close()
                 seed.build(db.DEFAULT_DB_PATH)
                 st.session_state["conn"] = get_conn()
@@ -137,11 +142,23 @@ def sidebar() -> None:
 
 
 def init() -> None:
+    if st.session_state.get("role") == "Internal audit / Audit & Risk Committee":
+        st.session_state["role"] = R.AUDIT
     st.session_state.setdefault("demo_date", seed.DEMO_DATE)
     st.session_state.setdefault("role", R.INVESTIGATOR)
     st.session_state.setdefault("user_id", "u_tan")
     st.session_state["conn"] = get_conn()
     st.html(CSS)
+
+
+def require_page(name):
+    if not access.page_allowed(actor(), name):
+        st.warning("Your current role cannot access this page. Select an appropriate demo role in the sidebar.")
+        st.stop()
+
+
+def can(operation):
+    return access.allows(actor(), operation)
 
 
 # --- Feedback -------------------------------------------------------------------

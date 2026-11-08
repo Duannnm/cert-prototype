@@ -2,6 +2,7 @@ import streamlit as st
 
 import rules as R
 import ui
+import access
 
 ui.header("About & limitations", "IS4234 group project · technology demonstrator")
 
@@ -28,7 +29,17 @@ ui.table([
     {"u": R.LEGAL_LEAD, "d": "How to resolve overdue work and escalated concerns; authorising exceptions only "
                              "when uninvolved"},
     {"u": R.AUDIT, "d": "Whether controls are operating; where corrective action is required"},
+    {"u": R.COMMITTEE, "d": "Overdue or conflicted escalations requiring Committee action"},
+    {"u": R.OVERSEER, "d": "Read-only scrutiny of the demo's registered cases, controls and audit evidence"},
 ], [("u", "User"), ("d", "Decision supported")])
+
+st.subheader("Role permissions")
+st.caption("The same policy controls navigation and service permissions. Investigators are POL staff or "
+           "act on POL's behalf. They see assigned/involved cases; other roles have all registered synthetic "
+           "cases in this demonstration. A legal reviewer assesses cases; an external overseer scrutinises the process.")
+ui.table([{"role": role, "actions": ", ".join(action.replace("_", " ") for action, roles in access.PERMISSIONS.items()
+                                              if role in roles)} for role in R.ROLES],
+         [("role", "Role"), ("actions", "Permitted actions")])
 
 st.markdown("""
 ### Workflow and rules

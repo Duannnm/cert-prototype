@@ -6,11 +6,15 @@ import services as S
 import ui
 
 ui.header("Clearance verification", "Demonstration of a downstream recovery or legal system")
+ui.require_page("clearance")
 st.info("POL staff remain CERT's operational users. This screen simulates another system requiring "
         "a current clearance before acting. It sends no demand and has no connection to a real recovery system.")
 st.caption("Presenter: C014 refuses clearance. C001 demonstrates valid clearance. A made-up reference, "
            "different action, new review or changed evidence prevents verification.")
-cases = [c["case_id"] for c in S.list_cases(ui.conn())]
+cases = [c["case_id"] for c in S.visible_cases(ui.conn(), ui.actor())]
+if not cases:
+    st.info("No cases are available in your scope.")
+    st.stop()
 case_id = st.selectbox("Case to verify", cases, index=cases.index("C014") if "C014" in cases else 0)
 action = st.selectbox("Requested downstream action", R.RELIANCE_ACTIONS)
 ui.gate_banner(S.case_gate(ui.conn(), case_id))

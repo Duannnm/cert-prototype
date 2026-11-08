@@ -6,6 +6,7 @@ import services as S
 import ui
 
 conn = ui.conn()
+ui.require_page("audit_log")
 ui.header("Audit log & integrity", "Append-only, hash-chained log · SHA-256 source-record fingerprints")
 ui.render_flash()
 
@@ -69,7 +70,7 @@ with right:
         rid = st.selectbox("Source record", [r["record_id"] for r in records],
                            index=next((i for i, r in enumerate(records) if r["original_id"] == "KEL-D01"), 0),
                            format_func=lambda x: f"{x} – {next(r['original_id'] for r in records if r['record_id'] == x)}")
-        if st.button("Edit affected_end to 2013-04-15 outside CERT"):
+        if st.button("Edit affected_end to 2013-04-15 outside CERT", disabled=not ui.can("simulate_tampering")):
             out = S.simulate_tampering(conn, ui.actor(), ui.now(), rid, "affected_end", "2013-04-15")
             st.session_state.pop("hash_results", None)
             ui.flash(out)

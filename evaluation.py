@@ -55,15 +55,17 @@ def gate_battery(conn) -> list[dict]:
     permitted_later = []
     for case in S.list_cases(conn):
         cid = case["case_id"]
+        owner = users.get(case.get("registered_by"))
+        reliance_actor = owner if owner and owner.role == R.INVESTIGATOR else users["u_morgan"]
         gate = S.case_gate(conn, cid)
         action = R.RELIANCE_ACTIONS[0]
         if gate.state == R.CLEAR:
-            permitted_later.append((f"{cid}: {action} with gate CLEAR", cid, action))
+            permitted_later.append((f"{cid}: {action} with gate CLEAR", cid, action, reliance_actor))
         else:
             run(f"{cid}: {action} while gate {gate.state}", True,
-                S.attempt_reliance(conn, users["u_tan"], now, cid, action))
+                S.attempt_reliance(conn, reliance_actor, now, cid, action))
             run(f"{cid}: {R.RELIANCE_ACTIONS[1]} while gate {gate.state}", True,
-                S.attempt_reliance(conn, users["u_tan"], now, cid, R.RELIANCE_ACTIONS[1]))
+                S.attempt_reliance(conn, reliance_actor, now, cid, R.RELIANCE_ACTIONS[1]))
         if case["status"] != "active":
             continue
         for uid in case["involved_users"]:
@@ -92,8 +94,8 @@ def gate_battery(conn) -> list[dict]:
     run("C010: EX-002 authorised by its proposer K. Wong", True,
         S.authorise_exception(conn, users["u_wong"], now, "EX-002", independence_confirmed=True))
 
-    for scenario, cid, action in permitted_later:
-        run(scenario, False, S.attempt_reliance(conn, users["u_tan"], now, cid, action))
+    for scenario, cid, action, actor in permitted_later:
+        run(scenario, False, S.attempt_reliance(conn, actor, now, cid, action))
     run("C010: EX-002 authorised by uninvolved external reviewer E. Clarke", False,
         S.authorise_exception(conn, users["u_clarke"], now, "EX-002", independence_confirmed=True))
     return rows

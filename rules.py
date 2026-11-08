@@ -28,8 +28,10 @@ SUPPLIER_LIAISON = "Supplier liaison manager"
 TECH_REVIEWER = "Technical reviewer"
 LEGAL_REVIEWER = "Independent legal reviewer"
 LEGAL_LEAD = "Legal lead (control owner)"
-AUDIT = "Internal audit / Audit & Risk Committee"
-ROLES = (INVESTIGATOR, SUPPLIER_LIAISON, TECH_REVIEWER, LEGAL_REVIEWER, LEGAL_LEAD, AUDIT)
+AUDIT = "Internal audit"
+COMMITTEE = "Audit & Risk Committee"
+OVERSEER = "External independent overseer"
+ROLES = (INVESTIGATOR, SUPPLIER_LIAISON, TECH_REVIEWER, LEGAL_REVIEWER, LEGAL_LEAD, AUDIT, COMMITTEE, OVERSEER)
 
 # Escalation targets
 TO_LEGAL_LEAD = "Legal lead"
@@ -478,12 +480,12 @@ def evaluate_gate(*, status: str, evidence: Sequence[Mapping], open_required: Se
     never hides a gap and never overrides an open required inquiry.
     """
     if status == "closed":
-        reassess = [t for t in open_required if t["type"] == "Reassessment"]
+        reassess = list(open_required)
         if not reassess:
             return GateResult(CLOSED, notes=["Case closed; no reassessment open."])
-        reasons = ["Closed case under reassessment: further reliance on the original figures "
-                   "(e.g. continued recovery) is suspended until the reassessment is decided"]
-        reasons += [f"Open reassessment {t['task_id']}: {t['title']} (owner {t['owner']})" for t in reassess]
+        reasons = ["Closed case has unresolved reassessment or follow-up: further reliance on the original "
+                   "figures remains suspended until required work is resolved"]
+        reasons += [f"Open {t['type'].lower()} {t['task_id']}: {t['title']} (owner {t['owner']})" for t in reassess]
         return GateResult(BLOCKED, reasons)
 
     reasons, notes = [], []
@@ -696,7 +698,7 @@ def plan_reassessment(defect: Mapping, cases: Sequence[Mapping],
         actions.append(ScreeningAction(
             case_id=case["case_id"], link=link, previous_result=previous,
             newly_flagged=newly, withdrawn=withdrawn,
-            create_inquiry=(newly or withdrawn) and not closed,
+            create_inquiry=(newly or withdrawn),
             create_reassessment=newly and (closed or decision is not None),
             original_decision=decision,
         ))

@@ -69,6 +69,38 @@ as red placeholders.
 
 ## Using the demo
 
+### Navigation, roles and reassessment
+
+Navigation is grouped into **Casework**, **Oversight**, and **Demo & guidance**. Demo walkthrough,
+Test results and About & limitations are guidance; Clearance verification is casework.
+Pages and operational actions are restricted by the shared `access.py` policy. Mutation services reject
+unauthorised calls even if a caller bypasses the UI. Investigators see assigned or involved cases.
+Other roles have all registered synthetic cases in this demo; production requires explicit access scope
+and authenticated identities. The role switcher is still a presentation tool, not a login system.
+
+Investigators register cases and investigate links. Supplier liaison records deliveries, technical reviewers
+check expert evidence, and independent legal reviewers record case decisions. Legal leads manage controls.
+**Internal audit (H. Ng)** inspects controls and prepares exports. **Audit & Risk Committee (L. Chen)** handles
+Committee escalations. **External independent overseer (P. Evans)** has read-only case, dashboard and audit
+access, without operational uploads, reliance, reviewer decisions or demo reset. These are proposed roles,
+not claims about a historical POL role or an existing regulator's statutory authority.
+
+For reassessment, CERT screens every registered open and closed case automatically. Investigators/technical
+reviewers investigate potential links. Only the assigned uninvolved legal reviewer, different from the
+original reviewer, can complete reassessment. An uninvolved legal lead or Committee member can reassign
+it, but cannot assign a conflicted or original reviewer. If no eligible reviewer exists, the task stays
+unassigned and escalates to the Committee. Existing demo databases receive the new roles and any missing
+investigation tasks for pending reassessments without resetting case records.
+
+An outcome of **No referral required** is blocked while other required inquiries or unexcepted evidence
+gaps remain. **Refer earlier decision** can preserve uncertainty and creates a required follow-up task for
+an uninvolved legal lead (or Committee member). That owner records recipient, receipt reference and the
+response/next step. Referral alone does not clear unresolved work or overwrite the original decision.
+
+For the presentation: start as A. Tan, switch to M. Okafor to load KEL-D07, then switch to H. Ng **before**
+opening the dashboard/export. For Q&A, inspect a reassessment's named owner and switch to that reviewer.
+P. Evans demonstrates read-only independent scrutiny. The full role permission table is in About & limitations.
+
 ### Clearance verification and independent oversight
 
 POL staff remain the operational users. **Oversight → Clearance verification** simulates a recovery or legal
@@ -88,11 +120,11 @@ their actions, with authenticated access. Optional checks can be bypassed.
 The updated **Demo walkthrough** includes these screens within 6:30. Keep the original integrity tampering
 exercise for Q&A if time permits. KEL-D07 does not affect C001 and therefore does not invalidate its clearance.
 
-For the presentation, open **Oversight → Demo walkthrough**. It links to each step of the
+For the presentation, open **Demo & guidance → Demo walkthrough**. It links to each step of the
 6:30 demonstration and shows whether KEL-D07 is already loaded. Navigation does not change
 roles or load records automatically. Switch roles explicitly in the sidebar.
 
-**Oversight → Test results** displays the saved `test_results.md` evaluation, including its
+**Demo & guidance → Test results** displays the saved `test_results.md` evaluation, including its
 generation date, denominators, nine scenarios and detailed outcomes. It does not run tests
 against the live database. Refresh it locally with `python evaluation.py`, then commit and deploy
 the updated report. Case resets do not change the saved evaluation.
@@ -125,7 +157,9 @@ screening summary and links to affected cases, including closed cases.
 | Technical reviewer | S. Patel |
 | Independent legal reviewer | J. Lim, K. Wong, E. Clarke (external) |
 | Legal lead (control owner) | D. Morgan |
-| Internal audit / Audit & Risk Committee | H. Ng |
+| Internal audit | H. Ng |
+| Audit & Risk Committee | L. Chen |
+| External independent overseer | P. Evans |
 
 ### Seeded scenarios
 

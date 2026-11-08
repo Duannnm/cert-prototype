@@ -9,7 +9,8 @@ conn = ui.conn()
 ui.header("Case list", f"Demo date {R.fmt_date(ui.today())} · synthetic data")
 ui.render_flash()
 
-rows = S.case_overview(conn, ui.today())
+visible_ids = {c["case_id"] for c in S.visible_cases(conn, ui.actor())}
+rows = [r for r in S.case_overview(conn, ui.today()) if r["case_id"] in visible_ids]
 active = [r for r in rows if r["status"] == "Active"]
 cols = st.columns(5)
 cols[0].metric("Active cases", len(active))
@@ -63,7 +64,7 @@ left, right = st.columns(2)
 with left:
     st.subheader("Manual-review queue")
     st.caption("Rule 1 pairs with an Unknown field. They are never discarded; a person decides.")
-    queue = [t for t in S.case_tasks(conn, open_only=True) if t["type"] == "Manual review"]
+    queue = [t for t in S.case_tasks(conn, open_only=True) if t["type"] == "Manual review" and t["case_id"] in visible_ids]
     ui.table([{"task": t["task_id"], "case": t["case_id"], "defect": t["defect_id"], "title": t["title"],
                "owner": S.user_name(conn, t["owner"])} for t in queue],
              [("task", "Task"), ("case", "Case"), ("defect", "Defect"), ("title", "Why"), ("owner", "Owner")])

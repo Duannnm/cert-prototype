@@ -5,6 +5,7 @@ import services as S
 import ui
 
 conn = ui.conn()
+ui.require_page("dashboard")
 today = ui.today()
 ui.header("Oversight dashboard", f"Key risk indicators (Table 4.4) at {R.fmt_date(today)} · synthetic records")
 ui.render_flash()

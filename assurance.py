@@ -10,6 +10,7 @@ import services as S
 
 
 @S.transactional
+@S.permitted("issue_clearance")
 def issue_clearance(conn, actor, now, case_id, action):
     if actor.role not in (R.INVESTIGATOR, R.LEGAL_REVIEWER, R.LEGAL_LEAD):
         return S.Outcome(False, "This role cannot request a clearance")
@@ -30,6 +31,7 @@ def issue_clearance(conn, actor, now, case_id, action):
 
 
 @S.transactional
+@S.permitted("verify_clearance")
 def verify_clearance(conn, actor, now, case_id, action, reference):
     """Recheck authoritative live state. This never executes an actual recovery action."""
     case = S.get_case(conn, case_id)
@@ -65,6 +67,7 @@ def verify_clearance(conn, actor, now, case_id, action, reference):
 
 
 @S.transactional
+@S.permitted("oversight_export")
 def oversight_export(conn, actor, now):
     if actor.role not in (R.AUDIT, R.LEGAL_LEAD):
         return S.Outcome(False, "Switch to Internal audit or Legal lead to prepare an oversight export")

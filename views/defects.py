@@ -9,6 +9,7 @@ import services as S
 import ui
 
 conn = ui.conn()
+ui.require_page("defects")
 me = ui.actor()
 ui.header("Defect records", "PEAKs and KELs held by the supplier · loaded by file upload")
 ui.render_flash()

@@ -15,6 +15,8 @@ from functools import wraps
 
 import db
 import rules as R
+import access
+import inspect
 
 SYSTEM = "CERT rules engine"
 REQUIRED_TASK_TYPES = ("Evidence retrieval", "Defect inquiry", "Manual review",
@@ -47,6 +49,8 @@ class Outcome:
 
 
 SYSTEM_ACTOR = Actor("system", SYSTEM, "System")
+REASSESS_REFER = "Refer earlier decision for review (prosecutor / appeal route)"
+REASSESS_NO_REFERRAL = "No referral required – reasons recorded"
 
 
 def transactional(fn):
@@ -74,6 +78,79 @@ def transactional(fn):
 
 def ts(now: datetime) -> str:
     return now.strftime("%Y-%m-%d %H:%M")
+
+
+def permitted(operation):
+    """Reject unauthorised mutations even when called outside the UI."""
+    def decorate(fn):
+        @wraps(fn)
+        def guarded(conn, actor, now, *args, **kwargs):
+            arguments = inspect.signature(fn).bind(conn, actor, now, *args, **kwargs).arguments
+            problem = None
+            permission = ("import_legacy_case" if operation == "register_case"
+                          and arguments.get("data", {}).get("status") == "closed"
+                          and actor.role == R.LEGAL_LEAD else operation)
+            if not access.allows(actor, permission):
+                problem = f"The role {actor.role} cannot perform {operation}"
+            case_id = arguments.get("case_id")
+            if not case_id and arguments.get("task_id"):
+                row = conn.execute("SELECT case_id FROM tasks WHERE task_id = ?", (arguments["task_id"],)).fetchone()
+                case_id = row[0] if row else None
+            if case_id and not can_access_case(conn, actor, case_id):
+                problem = "This investigator is not assigned to or involved in the case"
+            if problem:
+                _log(conn, actor, now, "Permission denied: " + operation, case_id=case_id, after={"reason": problem})
+                return Outcome(False, "Action not permitted", [problem])
+            return fn(conn, actor, now, *args, **kwargs)
+        return guarded
+    return decorate
+
+
+def can_access_case(conn, actor, case_id):
+    if actor.role not in R.ROLES:
+        return False
+    if actor.role != R.INVESTIGATOR:
+        return True  # The demo's non-investigator scope is all registered synthetic cases.
+    case = get_case(conn, case_id)
+    return (case["registered_by"] == actor.user_id or actor.user_id in case["involved_users"]
+            or any(t["owner"] == actor.user_id for t in case_tasks(conn, case_id)))
+
+
+def visible_cases(conn, actor):
+    return [c for c in list_cases(conn) if can_access_case(conn, actor, c["case_id"])]
+
+
+@transactional
+def configure_demo_roles(conn):
+    """Upgrade existing demo databases without discarding casework."""
+    changed = conn.execute("UPDATE users SET role = ? WHERE role = ?",
+                           (R.AUDIT, "Internal audit / Audit & Risk Committee")).rowcount
+    conn.execute("UPDATE tasks SET owner_role = ? WHERE owner_role = ?",
+                 (R.AUDIT, "Internal audit / Audit & Risk Committee"))
+    for uid, name, role, external in (("u_chen", "L. Chen", R.COMMITTEE, 0),
+                                      ("u_evans", "P. Evans", R.OVERSEER, 1)):
+        changed += conn.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?, ?)",
+                                (uid, name, role, external, "Synthetic oversight identity")).rowcount
+    if db.get_meta(conn, "role_policy_version") != "2":
+        changed += conn.execute("UPDATE tasks SET owner = 'u_chen', owner_role = ? WHERE type = 'Escalation' "
+                                "AND status = 'Open' AND escalate_to = ? AND owner_role = ?",
+                                (R.COMMITTEE, R.TO_COMMITTEE, R.AUDIT)).rowcount
+        for task in case_tasks(conn, open_only=True):
+            if task["type"] != "Reassessment" or not task["defect_id"]:
+                continue
+            case = get_case(conn, task["case_id"])
+            defect = get_defect(conn, task["defect_id"])
+            link = next((l for l in case_links(conn, case["case_id"]) if l["defect_id"] == task["defect_id"]), None)
+            existing = conn.execute("SELECT 1 FROM tasks WHERE case_id = ? AND defect_id = ? "
+                                    "AND type IN ('Defect inquiry', 'Manual review') AND status = 'Open'",
+                                    (case["case_id"], task["defect_id"])).fetchone()
+            if defect and link and not (link["inquiry_status"] or "").startswith("Closed") and not existing:
+                _create_inquiry_task(conn, datetime.strptime(task["created"], "%Y-%m-%d %H:%M"),
+                                     case, defect, R.match_defect(case, defect))
+                changed += 1
+        db.set_meta(conn, "role_policy_version", "2")
+    if changed:
+        _log(conn, SYSTEM_ACTOR, datetime.now(), "Demo role configuration upgraded", after={"roles": list(R.ROLES)})
 
 
 def get_actor(conn, user_id: str) -> Actor:
@@ -280,7 +357,7 @@ def _default_owner(conn, role: str, case: dict | None = None, exclude: tuple[str
     for u in users:
         if u.user_id not in involved:
             return u.user_id
-    return users[0].user_id if users else "system"
+    return "system" if role == R.LEGAL_REVIEWER else (users[0].user_id if users else "system")
 
 
 def _create_task(conn, actor: Actor, now: datetime, *, case_id: str, type: str, title: str,
@@ -499,6 +576,7 @@ def _refresh(conn, actor: Actor, now: datetime, case_id: str) -> None:
 
 
 @transactional
+@permitted("refresh_case")
 def refresh_case(conn, actor: Actor, now: datetime, case_id: str) -> None:
     _refresh(conn, actor, now, case_id)
 
@@ -508,6 +586,7 @@ def refresh_case(conn, actor: Actor, now: datetime, case_id: str) -> None:
 # =============================================================================
 
 @transactional
+@permitted("register_case")
 def register_case(conn, actor: Actor, now: datetime, data: dict,
                   source_file: str = "case_register_entry.json") -> Outcome:
     case_id = data["case_id"].strip()
@@ -626,15 +705,22 @@ def _create_reassessment_task(conn, now: datetime, case: dict, defect: dict, lin
     original = latest_review(conn, case["case_id"])
     preserved = (f"Original decision {original['review_id']} ({R.fmt_date(original['recorded_on'])}): "
                  f"“{original['decision']}”. Reasons: {original['reasons']}")
-    return _create_task(
+    owner = _default_owner(conn, R.LEGAL_REVIEWER, case, exclude=(original["reviewer"],))
+    task_id = _create_task(
         conn, SYSTEM_ACTOR, now, case_id=case["case_id"], type="Reassessment",
         title=f"Reassess earlier decision {original['review_id']} in light of {defect['defect_id']}",
-        owner=_default_owner(conn, R.LEGAL_REVIEWER, case, exclude=(original["reviewer"],)),
+        owner=owner,
         detail=f"{link.explanation}\n\n{preserved}",
         linked_to=original["review_id"], defect_id=defect["defect_id"])
+    if owner == "system":
+        _create_task(conn, SYSTEM_ACTOR, now, case_id=case["case_id"], type="Escalation",
+                     title="Assign an independent reviewer: no eligible reviewer available", owner=_default_owner(conn, R.COMMITTEE),
+                     urgent=True, escalate_to=R.TO_COMMITTEE, linked_to=task_id)
+    return task_id
 
 
 @transactional
+@permitted("load_defect")
 def load_defect(conn, actor: Actor, now: datetime, record: dict,
                 source_file: str = "defect_entry_form") -> Outcome:
     """Add or update a PEAK/KEL record, then run Rule 5 across every case."""
@@ -742,7 +828,13 @@ def parse_defect_csv(text: str) -> tuple[list[dict], list[str]]:
 # =============================================================================
 
 @transactional
+@permitted("load_complaints")
 def load_complaints(conn, actor: Actor, now: datetime, rows: list[dict], source_file: str) -> Outcome:
+    if actor.role == R.INVESTIGATOR:
+        branches = {c["branch"] for c in visible_cases(conn, actor)}
+        if any(str(row.get("branch", "")) not in branches for row in rows):
+            _log(conn, actor, now, "Permission denied: complaint scope", source_file)
+            return Outcome(False, "Complaint import refused", ["An investigator can import complaints only for their case branches"])
     for row in rows:
         raw = {k: str(row.get(k, "")) for k in ("complaint_id", "branch", "date", "issue")}
         record_id = db.add_source_record(conn, source_type="Helpline / complaint (POL)", source_file=source_file,
@@ -754,6 +846,7 @@ def load_complaints(conn, actor: Actor, now: datetime, rows: list[dict], source_
 
 
 @transactional
+@permitted("record_supplier_delivery")
 def record_supplier_delivery(conn, actor: Actor, now: datetime, *, case_id: str, item_type: str,
                              request_ref: str, period_start, period_end, availability: str,
                              notes: str = "", source_file: str | None = None) -> Outcome:
@@ -776,6 +869,7 @@ def record_supplier_delivery(conn, actor: Actor, now: datetime, *, case_id: str,
 
 
 @transactional
+@permitted("close_retrieval_unavailable")
 def close_retrieval_unavailable(conn, actor: Actor, now: datetime, task_id: str,
                                 steps_taken: str) -> Outcome:
     task = dict(conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone())
@@ -800,6 +894,7 @@ def close_retrieval_unavailable(conn, actor: Actor, now: datetime, task_id: str,
 # =============================================================================
 
 @transactional
+@permitted("record_inquiry_outcome")
 def record_inquiry_outcome(conn, actor: Actor, now: datetime, task_id: str, *, outcome: str,
                            finding: str, may_undermine: bool = False) -> Outcome:
     task = dict(conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone())
@@ -834,6 +929,7 @@ def record_inquiry_outcome(conn, actor: Actor, now: datetime, task_id: str, *, o
 
 
 @transactional
+@permitted("record_expert_statement")
 def record_expert_statement(conn, actor: Actor, now: datetime, *, case_id: str, statement_id: str,
                             author: str, defects_addressed: list[str], summary: str = "") -> Outcome:
     prev = latest_statement(conn, case_id)
@@ -853,6 +949,7 @@ def record_expert_statement(conn, actor: Actor, now: datetime, *, case_id: str, 
 
 
 @transactional
+@permitted("run_expert_check")
 def run_expert_check(conn, actor: Actor, now: datetime, case_id: str, notes: str = "") -> Outcome:
     if actor.role != R.TECH_REVIEWER:
         return Outcome(False, "Not run", ["The expert completeness check is performed by a technical reviewer"])
@@ -931,7 +1028,11 @@ def record_review(conn, actor: Actor, now: datetime, case_id: str, *, declared_n
 
 
 @transactional
+@permitted("attempt_reliance")
 def attempt_reliance(conn, actor: Actor, now: datetime, case_id: str, action: str) -> Outcome:
+    if action not in R.RELIANCE_ACTIONS:
+        _record_attempt(conn, actor, now, case_id, action, "reliance", "Blocked", ["Unknown reliance action"])
+        return Outcome(False, "Unknown reliance action", ["Select an authorised reliance action"])
     gate = case_gate(conn, case_id)
     if gate.state == R.CLEAR:
         _record_attempt(conn, actor, now, case_id, action, "reliance", "Permitted", gate.notes)
@@ -950,7 +1051,7 @@ def _escalate_rejection(conn, actor: Actor, now: datetime, case: dict, what: str
     legal_lead = _default_owner(conn, R.LEGAL_LEAD)
     conflicted = actor.role == R.LEGAL_LEAD or legal_lead in case["involved_users"]
     target = R.TO_COMMITTEE if conflicted else R.TO_LEGAL_LEAD
-    owner = _default_owner(conn, R.AUDIT) if conflicted else legal_lead
+    owner = _default_owner(conn, R.COMMITTEE) if conflicted else legal_lead
     return _create_task(conn, actor, now, case_id=case["case_id"], type="Escalation",
                         title=f"Rejected {what} by {actor.name}", owner=owner, urgent=True,
                         escalate_to=target, detail="; ".join(problems))
@@ -1016,12 +1117,15 @@ def authorise_exception(conn, actor: Actor, now: datetime, exception_id: str,
 # =============================================================================
 
 @transactional
+@permitted("acknowledge_escalation")
 def acknowledge_escalation(conn, actor: Actor, now: datetime, task_id: str, note: str) -> Outcome:
     task = dict(conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone())
     if task["type"] != "Escalation" or task["status"] != "Open":
         return Outcome(False, "Not recorded", ["Only an open escalation can be acknowledged here"])
-    if actor.role not in (R.LEGAL_LEAD, R.AUDIT):
+    if actor.role not in (R.LEGAL_LEAD, R.COMMITTEE):
         return Outcome(False, "Not recorded", ["Escalations are resolved by the legal lead or the Committee"])
+    if task["escalate_to"] == R.TO_COMMITTEE and actor.role != R.COMMITTEE:
+        return Outcome(False, "Not recorded", ["This escalation requires Committee action"])
     if actor.user_id in get_case(conn, task["case_id"])["involved_users"]:
         return Outcome(False, "Not recorded", [f"{actor.name} is involved in this case; route to the Committee"])
     if len((note or "").strip()) < 10:
@@ -1041,17 +1145,78 @@ def complete_reassessment(conn, actor: Actor, now: datetime, task_id: str, *, ou
         involved_users=case["involved_users"], declared_no_involvement=declared_no_involvement, reasons=reasons)
     if task["type"] != "Reassessment" or task["status"] != "Open":
         problems.append("Only an open reassessment task can be completed here")
+    original = conn.execute("SELECT * FROM reviews WHERE review_id = ?", (task["linked_to"],)).fetchone()
+    if actor.user_id != task["owner"]:
+        problems.append("Only the assigned independent reviewer can complete this reassessment")
+    if original and original["reviewer"] == actor.user_id:
+        problems.append("The original reviewer cannot reassess their own decision")
+    if outcome not in (REASSESS_REFER, REASSESS_NO_REFERRAL):
+        problems.append("Select a recognised reassessment outcome")
+    if outcome == REASSESS_NO_REFERRAL:
+        unresolved = [t for t in case_tasks(conn, case["case_id"], open_only=True)
+                      if t["required"] and t["task_id"] != task_id]
+        if unresolved:
+            problems.append("No-referral closure requires completion of all other required inquiries: "
+                            + ", ".join(t["task_id"] for t in unresolved))
+        if any(i["status"] in (R.GAP, R.UNKNOWN) and i["item_type"] not in _authorised_exceptions(conn, case["case_id"])
+               for i in evidence_items(conn, case["case_id"])):
+            problems.append("Resolve or validly except evidence gaps before concluding no referral is needed")
     if problems:
         _record_attempt(conn, actor, now, case["case_id"], f"Complete reassessment {task_id}",
                         "self_review" if self_review else "review", "Blocked", problems)
         return Outcome(False, "Reassessment blocked and logged", problems)
     _close_task(conn, actor, now, task_id, outcome, reasons.strip())
+    if outcome == REASSESS_REFER:
+        owner = _default_owner(conn, R.LEGAL_LEAD, case)
+        if owner in case["involved_users"]:
+            owner = _default_owner(conn, R.COMMITTEE, case)
+        _create_task(conn, actor, now, case_id=case["case_id"], type="Referral follow-up",
+                     title=f"Track referral of earlier decision {task['linked_to']}",
+                     owner=owner, required=True,
+                     linked_to=task["linked_to"], defect_id=task["defect_id"],
+                     detail="Referral recorded, not confirmed received or resolved. " + reasons.strip())
     _refresh(conn, actor, now, case["case_id"])
     return Outcome(True, f"Reassessment {task_id} recorded: {outcome}. The original decision "
                          f"{task['linked_to']} is preserved unchanged.")
 
 
 @transactional
+@permitted("assign_reassessment")
+def assign_reassessment(conn, actor: Actor, now: datetime, task_id: str, reviewer_id: str) -> Outcome:
+    task = dict(conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone())
+    case = get_case(conn, task["case_id"])
+    reviewer = get_actor(conn, reviewer_id)
+    original = conn.execute("SELECT reviewer FROM reviews WHERE review_id = ?", (task["linked_to"],)).fetchone()
+    if task["type"] != "Reassessment" or task["status"] != "Open":
+        return Outcome(False, "Assignment refused", ["Only an open reassessment can be assigned"])
+    if actor.user_id in case["involved_users"]:
+        return Outcome(False, "Assignment refused", ["An involved manager cannot assign the reviewer"])
+    if reviewer.role != R.LEGAL_REVIEWER or reviewer_id in case["involved_users"] or (original and reviewer_id == original[0]):
+        return Outcome(False, "Assignment refused", ["Choose an uninvolved legal reviewer other than the original reviewer"])
+    conn.execute("UPDATE tasks SET owner = ?, owner_role = ? WHERE task_id = ?", (reviewer_id, reviewer.role, task_id))
+    _log(conn, actor, now, "Reassessment assigned", task_id, case["case_id"],
+         before={"owner": task["owner"]}, after={"owner": reviewer_id})
+    return Outcome(True, "Independent reassessment reviewer assigned")
+
+
+@transactional
+@permitted("record_referral_followup")
+def record_referral_followup(conn, actor: Actor, now: datetime, task_id: str, evidence: str) -> Outcome:
+    task = dict(conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone())
+    case = get_case(conn, task["case_id"])
+    if task["type"] != "Referral follow-up" or task["status"] != "Open":
+        return Outcome(False, "Not recorded", ["Only an open referral follow-up can be completed"])
+    if actor.user_id != task["owner"] or actor.user_id in case["involved_users"]:
+        return Outcome(False, "Not recorded", ["Only the assigned uninvolved owner may record referral follow-through"])
+    if len(evidence.strip()) < 20:
+        return Outcome(False, "Not recorded", ["Record recipient, receipt reference and the documented response or next step"])
+    _close_task(conn, actor, now, task_id, "Receipt and response documented", evidence.strip())
+    _refresh(conn, actor, now, task["case_id"])
+    return Outcome(True, "Referral follow-through recorded. Other required work and gate checks still apply.")
+
+
+@transactional
+@permitted("close_case")
 def close_case(conn, actor: Actor, now: datetime, case_id: str, note: str) -> Outcome:
     case = get_case(conn, case_id)
     conn.execute("UPDATE cases SET status = 'closed', closed_on = ?, closure_note = ? WHERE case_id = ?",
@@ -1097,6 +1262,7 @@ def run_escalation_sweep(conn, now: datetime) -> int:
 # =============================================================================
 
 @transactional
+@permitted("simulate_tampering")
 def simulate_tampering(conn, actor: Actor, now: datetime, record_id: str, field_name: str, new_value: str) -> Outcome:
     """Demo only: an administrator bypasses the app and edits a stored source record."""
     row = conn.execute("SELECT raw_content FROM source_records WHERE record_id = ?", (record_id,)).fetchone()

@@ -33,6 +33,8 @@ USERS = [
     ("u_clarke", "E. Clarke", R.LEGAL_REVIEWER, 1, "External legal reviewer"),
     ("u_morgan", "D. Morgan", R.LEGAL_LEAD, 0, "Owns the review policy and CERT's rules"),
     ("u_ng", "H. Ng", R.AUDIT, 0, "Internal audit; reports to the Audit & Risk Committee"),
+    ("u_chen", "L. Chen", R.COMMITTEE, 0, "Committee oversight and escalations"),
+    ("u_evans", "P. Evans", R.OVERSEER, 1, "Read-only oversight of all synthetic cases in this demo"),
 ]
 
 HO2 = "Horizon Online v2"
@@ -182,7 +184,7 @@ def populate(conn) -> None:
                     "declared shortfall. No known defect identified at the date of review (not confirmation "
                     "of reliability). SPM given the evidence relied on.")
     S.attempt_reliance(conn, shah, t.at("2013-04-23"), "C011", R.RELIANCE_ACTIONS[0])
-    S.close_case(conn, shah, t.at("2013-08-30"), "C011", "Recovery completed by agreed deductions")
+    S.close_case(conn, morgan, t.at("2013-08-30"), "C011", "Recovery completed by agreed deductions")
 
     # --- C001: fully clear case --------------------------------------------
     S.register_case(conn, tan, t.at("2013-09-02"), dict(

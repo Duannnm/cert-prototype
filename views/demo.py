@@ -16,7 +16,7 @@ steps = [
      "Request clearance for C014: refused. Select C001, request clearance and verify it: the simulated action may proceed. Change the requested action and verify the same reference again: refused. Explain that production systems must require this check."),
     ("2:20–3:25 · Introduce later evidence", "Supplier liaison manager · M. Okafor", "defects",
      "Switch role, load KEL-D07 in the demo tab, then open C014 and closed case C011 from the result. Explain why earlier decisions need reassessment."),
-    ("3:25–4:05 · Show oversight", "Any demo role", "dashboard",
+    ("3:25–4:05 · Show oversight", "Internal audit · H. Ng", "dashboard",
      "Highlight evidence gaps, closed cases awaiting reassessment and blocked self-review attempts. Identify who must act and the escalation threshold."),
     ("4:05–5:05 · Prepare independent scrutiny", "Internal audit · H. Ng", "oversight-export",
      "Prepare the oversight package and point to its manifest. It carries decisions, exceptions, clearance attempts and audit evidence for independent inspection. Download it if needed. No regulator receives it automatically. Explain that separate registers are needed to find omitted cases."),
@@ -28,6 +28,14 @@ for title, role, url, action in steps:
     st.caption("Acting as: " + role)
     st.write(action)
     st.link_button("Open this step", url)
+with st.expander("Who completes reassessment? (Q&A)"):
+    st.write("After loading KEL-D07, open C014 or C011 and read the assigned reviewer in Tasks & escalation. "
+             "Switch to Independent legal reviewer and select that named user. Only that uninvolved reviewer, "
+             "who must differ from the original decision-maker, can complete the reassessment. "
+             "A legal lead or Committee member can assign another eligible reviewer. A referral can preserve "
+             "unresolved concerns; concluding no referral is needed requires the other required checks to be resolved.")
+    st.write("For external scrutiny, switch to External independent overseer, P. Evans. Show that the "
+             "dashboard and audit history remain visible, while upload, clearance and case-edit controls are unavailable.")
 st.caption("Navigation opens the target page without changing your role or loading evidence. "
            "The sidebar role switcher simulates identity. Reset discards demo edits for every visitor.")
 with st.expander("Optional Q&A: stale clearance and integrity"):
