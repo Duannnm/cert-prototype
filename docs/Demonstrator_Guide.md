@@ -160,7 +160,19 @@ forward to watch escalations trigger.
 | Technical reviewer | S. Patel |
 | Independent legal reviewer | J. Lim, K. Wong, E. Clarke (external) |
 | Legal lead (control owner) | D. Morgan |
-| Internal audit / Audit & Risk Committee | H. Ng |
+| Internal audit | H. Ng |
+| Audit & Risk Committee | L. Chen |
+| External independent overseer | P. Evans |
+
+**Demo & guidance → Roles** replaces the Demo walkthrough page. It explains responsibilities,
+why each role is needed, accessible pages and action boundaries. The sidebar simulates identity;
+it is not authentication.
+
+**Casework → Clearance verification** separates requesting a reference from checking it. C014 is refused;
+C001 can receive a reference. Issuance is not approval: press **Verify before proceeding** to check the
+entered reference. Changing the reference, case or action clears the previous verification. A fabricated
+or blank reference is refused. Do not press **Request clearance from CERT** to test an edited reference:
+that button creates a new genuine reference and fills the field instead.
 
 | Case | Scenario |
 |---|---|
@@ -191,8 +203,8 @@ walkthrough) and `defects_seed_extract.csv` (the seeded defects, showing the CSV
 6. **Expert check:** XC-001 records the omission of KEL-D01 and correction task T-025 for S. Patel.
 7. **Reliance & exceptions:** as A. Tan, press *Issue recovery demand*. It is blocked and the reasons are logged.
 8. **Independent review tab:** J. Lim's conflict declaration and decision are recorded against evidence v7.
-9. **Self-approval:** switch to Investigator R. Shah, open C005 and try to record a review. It is blocked and
-   logged as a self-review attempt.
+9. **Self-approval:** inspect C005's recorded blocked self-review attempt. Investigators cannot record an
+   independent legal review; the Roles page explains this separation.
 10. **Rule 5:** switch to Supplier liaison manager, open *Defect records* and load KEL-D07 (one-click demo tab
     or CSV upload). CERT re-screens all cases and creates two reassessment tasks: for C014 (linked to decision
     RV-005) and for closed case C011.

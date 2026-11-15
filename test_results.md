@@ -1,6 +1,6 @@
 # CERT – Test results (report Table 4.6 and Section 4.2.7)
 
-Generated 09 Nov 2026 02:29 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
+Generated 15 Nov 2026 18:25 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
 
 ## Table 4.6 – Test conditions, expected and observed outcomes
 
@@ -84,6 +84,7 @@ Generated 09 Nov 2026 02:29 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_unassigned_investigator_cannot_act_on_another_case` | **PASSED** |
 | `test_upload_permission_is_enforced_without_ui` | **PASSED** |
 | `test_external_overseer_has_read_only_navigation` | **PASSED** |
+| `test_roles_page_explains_all_roles_and_uses_live_permissions` | **PASSED** |
 | `test_reassessment_requires_assigned_different_reviewer` | **PASSED** |
 | `test_no_referral_requires_resolved_inquiry_but_referral_can_preserve_uncertainty` | **PASSED** |
 | `test_no_referral_can_complete_after_documented_inquiry` | **PASSED** |
@@ -99,6 +100,11 @@ Generated 09 Nov 2026 02:29 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_oversight_export_permissions_and_fingerprints` | **PASSED** |
 | `test_clearance_page_rejects_c014_and_accepts_c001` | **PASSED** |
 | `test_oversight_page_prepares_snapshot_for_auditor` | **PASSED** |
+| `test_edited_reference_clears_approval_and_verification_refuses_it[CLR-CHANGED-NOT-ISSUED]` | **PASSED** |
+| `test_edited_reference_clears_approval_and_verification_refuses_it[]` | **PASSED** |
+| `test_changing_case_or_action_invalidates_displayed_verification[Requested downstream action-Pass figures on as reliable (prosecution / disclosure)]` | **PASSED** |
+| `test_changing_case_or_action_invalidates_displayed_verification[Case to verify-C014]` | **PASSED** |
+| `test_case_state_change_clears_displayed_verification` | **PASSED** |
 | `test_audit_log_is_append_only_and_chained` | **PASSED** |
 | `test_source_record_hash_detects_out_of_band_change` | **PASSED** |
 | `test_wording_never_claims_cause_or_reliability` | **PASSED** |
@@ -109,7 +115,7 @@ Generated 09 Nov 2026 02:29 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_page_renders[views/dashboard.py]` | **PASSED** |
 | `test_page_renders[views/audit_log.py]` | **PASSED** |
 | `test_page_renders[views/about.py]` | **PASSED** |
-| `test_page_renders[views/demo.py]` | **PASSED** |
+| `test_page_renders[views/roles.py]` | **PASSED** |
 | `test_page_renders[views/test_results.py]` | **PASSED** |
 | `test_page_renders[views/clearance.py]` | **PASSED** |
 | `test_page_renders[views/oversight_export.py]` | **PASSED** |

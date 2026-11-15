@@ -71,7 +71,7 @@ as red placeholders.
 
 ### Navigation, roles and reassessment
 
-Navigation is grouped into **Casework**, **Oversight**, and **Demo & guidance**. Demo walkthrough,
+Navigation is grouped into **Casework**, **Oversight**, and **Demo & guidance**. Roles,
 Test results and About & limitations are guidance; Clearance verification is casework.
 Pages and operational actions are restricted by the shared `access.py` policy. Mutation services reject
 unauthorised calls even if a caller bypasses the UI. Investigators see assigned or involved cases.
@@ -99,15 +99,21 @@ response/next step. Referral alone does not clear unresolved work or overwrite t
 
 For the presentation: start as A. Tan, switch to M. Okafor to load KEL-D07, then switch to H. Ng **before**
 opening the dashboard/export. For Q&A, inspect a reassessment's named owner and switch to that reviewer.
-P. Evans demonstrates read-only independent scrutiny. The full role permission table is in About & limitations.
+P. Evans demonstrates read-only independent scrutiny. **Demo & guidance → Roles** explains each role's
+responsibilities, why it is needed, accessible pages and action boundaries. Page access is calculated from
+the shared permission policy.
 
 ### Clearance verification and independent oversight
 
-POL staff remain the operational users. **Oversight → Clearance verification** simulates a recovery or legal
+POL staff remain the operational users. **Casework → Clearance verification** simulates a recovery or legal
 system requiring a clearance reference. Requesting one for C014 is refused. C001 can receive a clearance,
 which permits only the specified action under its current evidence version and independent review. Verifying
 a fabricated reference, a different case/action, or a clearance superseded by evidence or review changes fails.
 Issuance and verification are audited. The simulation performs no real recovery or legal action.
+Issuance is shown separately from the downstream decision and does not display a green approval.
+Editing the reference, case or action clears the previous verification; changes to evidence or review also
+invalidate the displayed result on the next rerun. Only **Verify before proceeding** checks the entered
+reference. **Request clearance from CERT** creates a new reference and fills the input field.
 
 **Oversight → Oversight export** lets Internal audit or the Legal lead prepare a ZIP of registered case
 snapshots, tasks, decisions, exceptions, gate attempts, defect links, the audit history and integrity checks.
@@ -117,12 +123,10 @@ protected delivery, retention and evidence access. Separate recovery/legal regis
 cases omitted from CERT. Production downstream systems must enforce clearance checking atomically with
 their actions, with authenticated access. Optional checks can be bypassed.
 
-The updated **Demo walkthrough** includes these screens within 6:30. Keep the original integrity tampering
+For the presentation, demonstrate C014's blocked gate, C001 clearance and a mismatched reference/action,
+KEL-D07 reassessment, then audit dashboard/export and the saved evaluation. Switch roles explicitly in the
+sidebar. The previous Demo walkthrough page has been replaced by **Roles**. Keep the integrity tampering
 exercise for Q&A if time permits. KEL-D07 does not affect C001 and therefore does not invalidate its clearance.
-
-For the presentation, open **Demo & guidance → Demo walkthrough**. It links to each step of the
-6:30 demonstration and shows whether KEL-D07 is already loaded. Navigation does not change
-roles or load records automatically. Switch roles explicitly in the sidebar.
 
 **Demo & guidance → Test results** displays the saved `test_results.md` evaluation, including its
 generation date, denominators, nine scenarios and detailed outcomes. It does not run tests

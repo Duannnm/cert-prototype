@@ -2,6 +2,8 @@ import io
 import json
 import zipfile
 
+import pytest
+
 import assurance as A
 import db
 import rules as R
@@ -78,3 +80,64 @@ def test_oversight_page_prepares_snapshot_for_auditor(app):
     next(b for b in app.button if b.label == "Prepare oversight package").click().run()
     assert not app.exception
     assert any("10 registered cases" in s.value for s in app.success)
+
+
+@pytest.mark.parametrize("reference", ["CLR-CHANGED-NOT-ISSUED", ""])
+def test_edited_reference_clears_approval_and_verification_refuses_it(app, reference):
+    app.switch_page("views/clearance.py").run()
+    next(s for s in app.selectbox if s.label == "Case to verify").select("C001").run()
+    next(b for b in app.button if b.label == "Request clearance from CERT").click().run()
+    assert not app.success  # Issuance must never look like verified approval.
+    original = app.session_state["clearance_reference"]
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert any("action may proceed" in s.value for s in app.success)
+    app.text_input(key="clearance_reference").input(reference).run()
+    assert not app.success
+    assert any("NOT VERIFIED" in i.value for i in app.info)
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert not app.exception and not app.success
+    assert any("action refused" in e.value for e in app.error)
+    assert any("No issued clearance matches" in m.value for m in app.markdown)
+    conn = app.session_state["conn"]
+    last = conn.execute("SELECT * FROM gate_attempts ORDER BY rowid DESC LIMIT 1").fetchone()
+    assert last["category"] == "clearance_verification" and last["outcome"] == "Blocked"
+    # Restoring a genuine reference still requires an explicit fresh check.
+    app.text_input(key="clearance_reference").input(original).run()
+    assert not app.success
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert any("action may proceed" in s.value for s in app.success)
+
+
+@pytest.mark.parametrize("selection,value", [("Requested downstream action", R.RELIANCE_ACTIONS[1]),
+                                             ("Case to verify", "C014")])
+def test_changing_case_or_action_invalidates_displayed_verification(app, selection, value):
+    app.switch_page("views/clearance.py").run()
+    next(s for s in app.selectbox if s.label == "Case to verify").select("C001").run()
+    next(b for b in app.button if b.label == "Request clearance from CERT").click().run()
+    reference = app.session_state["clearance_reference"]
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    next(s for s in app.selectbox if s.label == selection).select(value).run()
+    assert not app.success
+    assert app.session_state["clearance_reference"] == reference
+    assert any("NOT VERIFIED" in i.value for i in app.info)
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert any("action refused" in e.value for e in app.error)
+    assert not app.success
+
+
+def test_case_state_change_clears_displayed_verification(app):
+    app.switch_page("views/clearance.py").run()
+    next(s for s in app.selectbox if s.label == "Case to verify").select("C001").run()
+    next(b for b in app.button if b.label == "Request clearance from CERT").click().run()
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert any("action may proceed" in s.value for s in app.success)
+    conn = app.session_state["conn"]
+    import services as S
+    assert S.record_review(conn, S.get_actor(conn, "u_wong"), NOW, "C001",
+                           declared_no_involvement=True, decision=R.HOLD,
+                           reasons="Additional inquiry is required").ok
+    app.run()
+    assert not app.success
+    assert any("NOT VERIFIED" in i.value for i in app.info)
+    next(b for b in app.button if b.label == "Verify before proceeding").click().run()
+    assert any("action refused" in e.value for e in app.error)

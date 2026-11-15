@@ -26,7 +26,7 @@ definitions = {
     "Oversight": [("dashboard", "Oversight dashboard", "monitoring", "dashboard"),
                   ("oversight_export", "Oversight export", "archive", "oversight-export"),
                   ("audit_log", "Audit log & integrity", "fact_check", "audit")],
-    "Demo & guidance": [("demo", "Demo walkthrough", "slideshow", "demo"),
+    "Demo & guidance": [("roles", "Roles", "groups", "roles"),
                         ("test_results", "Test results", "checklist", "tests"),
                         ("about", "About & limitations", "info", "about")],
 }

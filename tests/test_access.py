@@ -41,6 +41,21 @@ def test_external_overseer_has_read_only_navigation(app):
     assert not any(b.label in ("Record review", "Issue recovery demand", "Record outcome", "Assign reviewer") for b in app.button)
 
 
+def test_roles_page_explains_all_roles_and_uses_live_permissions(app):
+    app.selectbox(key="role").select(R.OVERSEER).run()
+    app.switch_page("views/roles.py").run()
+    assert not app.exception
+    content = " ".join(m.value for m in app.markdown)
+    assert all(role.replace("&", "&amp;") in content for role in R.ROLES)
+    assert "Why this role is needed" in content and "Accessible pages" in content
+    # Every row derives its pages from the policy; the overseer has no clearance/export access.
+    import re
+    row = next(r for r in re.findall(r"<tr>.*?</tr>", content) if R.OVERSEER in r)
+    assert "Oversight dashboard" in row and "Audit log &amp; integrity" in row
+    assert "Clearance verification" not in row and "Oversight export" not in row
+    assert access.page_allowed(S.Actor("u_evans", "P. Evans", R.OVERSEER), "roles")
+
+
 def reassess_task(conn, cid):
     return next(t for t in S.case_tasks(conn, cid, open_only=True)
                 if t["type"] == "Reassessment" and t["defect_id"] == "KEL-D07")

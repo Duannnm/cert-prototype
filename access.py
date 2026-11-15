@@ -34,7 +34,7 @@ def allows(actor, operation):
 
 
 def page_allowed(actor, page):
-    if page in ("demo", "test_results", "about", "case_list", "case_view"):
+    if page in ("roles", "test_results", "about", "case_list", "case_view"):
         return actor.role in R.ROLES
     return allows(actor, {"defects": "load_defect", "clearance": "issue_clearance",
                           "oversight_export": "oversight_export",
