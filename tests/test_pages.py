@@ -25,14 +25,17 @@ def app(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("page", PAGES)
 def test_page_renders(app, page):
-    app.selectbox(key="role").select(R.LEGAL_LEAD).run()
+    role = (R.SUPPLIER_LIAISON if page == "views/defects.py" else
+            R.AUDIT if page in ("views/dashboard.py", "views/audit_log.py", "views/oversight_export.py")
+            else R.LEGAL_REVIEWER)
+    app.selectbox(key="role").select(role).run()
     app.switch_page(page).run()
     assert not app.exception
 
 
 @pytest.mark.parametrize("case_id", ["C001", "C003", "C005", "C006", "C007", "C008", "C009", "C010", "C011", "C014"])
 def test_case_view_renders(app, case_id):
-    app.selectbox(key="role").select(R.LEGAL_LEAD).run()
+    app.selectbox(key="role").select(R.LEGAL_REVIEWER).run()
     app.session_state["case_id"] = case_id
     app.switch_page("views/case_view.py").run()
     assert not app.exception

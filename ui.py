@@ -11,6 +11,7 @@ import rules as R
 import seed
 import services as S
 import access
+import presentation_roles
 
 NAVY = "#16486f"
 STAGES = ["Register", "Link defects", "Check coverage", "Investigate", "Review", "Escalate", "Reassess"]
@@ -115,7 +116,7 @@ def sidebar() -> None:
                     "<div class='muted' style='margin-bottom:10px'>Case Evidence Review Tracker</div>",
                     unsafe_allow_html=True)
         st.markdown("**Acting as**")
-        role = st.selectbox("Role", R.ROLES, key="role", label_visibility="collapsed")
+        role = st.selectbox("Role", presentation_roles.ROLES, key="role", label_visibility="collapsed")
         options = [u.user_id for u in users if u.role == role]
         if st.session_state.get("user_id") not in options:
             st.session_state["user_id"] = options[0]
@@ -144,6 +145,9 @@ def sidebar() -> None:
 def init() -> None:
     if st.session_state.get("role") == "Internal audit / Audit & Risk Committee":
         st.session_state["role"] = R.AUDIT
+    if st.session_state.get("role") not in (None, *presentation_roles.ROLES):
+        st.session_state["role"] = R.INVESTIGATOR
+        st.session_state["user_id"] = "u_tan"
     st.session_state.setdefault("demo_date", seed.DEMO_DATE)
     st.session_state.setdefault("role", R.INVESTIGATOR)
     st.session_state.setdefault("user_id", "u_tan")

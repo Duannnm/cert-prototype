@@ -102,6 +102,10 @@ opening the dashboard/export. For Q&A, inspect a reassessment's named owner and 
 P. Evans demonstrates read-only independent scrutiny. **Demo & guidance → Roles** explains each role's
 responsibilities, why it is needed, accessible pages and action boundaries. Page access is calculated from
 the shared permission policy.
+The role switcher and table focus on five interactive roles: Investigator, Supplier liaison manager,
+Independent legal reviewer, Internal audit and External independent overseer. Technical reviewers,
+the legal lead and Committee remain named supporting owners in records and escalation rules, rather
+than additional presenter identities. Their authority is not transferred to investigators or overseers.
 
 ### Clearance verification and independent oversight
 
@@ -158,12 +162,12 @@ screening summary and links to affected cases, including closed cases.
 |---|---|
 | Investigator | A. Tan, R. Shah |
 | Supplier liaison manager | M. Okafor |
-| Technical reviewer | S. Patel |
 | Independent legal reviewer | J. Lim, K. Wong, E. Clarke (external) |
-| Legal lead (control owner) | D. Morgan |
 | Internal audit | H. Ng |
-| Audit & Risk Committee | L. Chen |
 | External independent overseer | P. Evans |
+
+S. Patel, D. Morgan and L. Chen remain supporting technical/control owners in the seeded history and
+escalation process; they are not selectable in the presentation interface.
 
 ### Seeded scenarios
 

@@ -1,6 +1,6 @@
 # CERT – Test results (report Table 4.6 and Section 4.2.7)
 
-Generated 15 Nov 2026 18:25 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
+Generated 15 Nov 2026 19:11 by `python evaluation.py` · Python 3.14.6 · pytest 9.2.0 · demo date 18 Nov 2013 · synthetic data only.
 
 ## Table 4.6 – Test conditions, expected and observed outcomes
 
@@ -84,7 +84,7 @@ Generated 15 Nov 2026 18:25 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_unassigned_investigator_cannot_act_on_another_case` | **PASSED** |
 | `test_upload_permission_is_enforced_without_ui` | **PASSED** |
 | `test_external_overseer_has_read_only_navigation` | **PASSED** |
-| `test_roles_page_explains_all_roles_and_uses_live_permissions` | **PASSED** |
+| `test_roles_page_explains_presentation_roles_and_uses_live_permissions` | **PASSED** |
 | `test_reassessment_requires_assigned_different_reviewer` | **PASSED** |
 | `test_no_referral_requires_resolved_inquiry_but_referral_can_preserve_uncertainty` | **PASSED** |
 | `test_no_referral_can_complete_after_documented_inquiry` | **PASSED** |
@@ -92,7 +92,8 @@ Generated 15 Nov 2026 18:25 by `python evaluation.py` · Python 3.14.6 · pytest
 | `test_pending_legacy_reassessment_receives_missing_inquiry_once` | **PASSED** |
 | `test_no_eligible_reviewer_escalates_instead_of_assigning_conflicted_user` | **PASSED** |
 | `test_case_scoped_complaints_and_unknown_action_are_rejected` | **PASSED** |
-| `test_all_roles_render_case_view_without_exposing_illegal_actions` | **PASSED** |
+| `test_presentation_roles_render_case_view_without_exposing_illegal_actions` | **PASSED** |
+| `test_old_supporting_role_session_returns_to_presenter_role` | **PASSED** |
 | `test_clearance_requires_clear_gate_and_authorised_role` | **PASSED** |
 | `test_clearance_checks_case_action_and_reference` | **PASSED** |
 | `test_later_evidence_invalidates_clearance` | **PASSED** |

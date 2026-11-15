@@ -32,10 +32,13 @@ in the demonstrator are fictional.
 |---|---|
 | Investigator | What evidence is still needed; which defects require inquiry |
 | Supplier liaison manager | Whether requested supplier data was delivered and covers the disputed period |
-| Technical reviewer | Whether an expert statement addresses the linked PEAKs and KELs |
 | Independent legal reviewer | Whether material must be disclosed, whether reliance may proceed, whether earlier decisions need referral |
-| Legal lead (control owner) | How to resolve overdue work and escalated concerns; authorising exceptions only when uninvolved |
-| Internal audit / Audit & Risk Committee | Whether controls are operating; where corrective action is required |
+| Internal audit | Whether controls are operating; preparation of oversight exports |
+| External independent overseer | Read-only scrutiny of registered cases, control indicators and audit evidence |
+
+These five roles are selectable in the presentation. Technical checks, legal control ownership and
+Committee escalation remain supporting responsibilities recorded in the workflow, without extra
+presenter identities or any transfer of their authority to the other roles.
 
 ## 3. The GRC problem and the decisions CERT supports
 
@@ -157,11 +160,8 @@ forward to watch escalations trigger.
 |---|---|
 | Investigator | A. Tan, R. Shah |
 | Supplier liaison manager | M. Okafor |
-| Technical reviewer | S. Patel |
 | Independent legal reviewer | J. Lim, K. Wong, E. Clarke (external) |
-| Legal lead (control owner) | D. Morgan |
 | Internal audit | H. Ng |
-| Audit & Risk Committee | L. Chen |
 | External independent overseer | P. Evans |
 
 **Demo & guidance → Roles** replaces the Demo walkthrough page. It explains responsibilities,

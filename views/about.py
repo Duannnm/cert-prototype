@@ -1,8 +1,6 @@
 import streamlit as st
 
-import rules as R
 import ui
-import access
 
 ui.header("About & limitations", "IS4234 group project · technology demonstrator")
 
@@ -19,27 +17,7 @@ non-match is reported as *no known defect identified*, never as confirmation tha
 records may be incomplete and faults unknown.
 """)
 
-st.markdown("### Users and decisions supported")
-ui.table([
-    {"u": R.INVESTIGATOR, "d": "What evidence is still needed; which defects require inquiry"},
-    {"u": R.SUPPLIER_LIAISON, "d": "Whether requested supplier data was delivered and covers the disputed period"},
-    {"u": R.TECH_REVIEWER, "d": "Whether an expert statement addresses the linked PEAKs/KELs"},
-    {"u": R.LEGAL_REVIEWER, "d": "Whether material must be disclosed, whether reliance may proceed, whether "
-                                 "earlier decisions need referral"},
-    {"u": R.LEGAL_LEAD, "d": "How to resolve overdue work and escalated concerns; authorising exceptions only "
-                             "when uninvolved"},
-    {"u": R.AUDIT, "d": "Whether controls are operating; where corrective action is required"},
-    {"u": R.COMMITTEE, "d": "Overdue or conflicted escalations requiring Committee action"},
-    {"u": R.OVERSEER, "d": "Read-only scrutiny of the demo's registered cases, controls and audit evidence"},
-], [("u", "User"), ("d", "Decision supported")])
-
-st.subheader("Role permissions")
-st.caption("The same policy controls navigation and service permissions. Investigators are POL staff or "
-           "act on POL's behalf. They see assigned/involved cases; other roles have all registered synthetic "
-           "cases in this demonstration. A legal reviewer assesses cases; an external overseer scrutinises the process.")
-ui.table([{"role": role, "actions": ", ".join(action.replace("_", " ") for action, roles in access.PERMISSIONS.items()
-                                              if role in roles)} for role in R.ROLES],
-         [("role", "Role"), ("actions", "Permitted actions")])
+st.page_link("views/roles.py", label="Roles: responsibilities and access", icon=":material/groups:")
 
 st.markdown("""
 ### Workflow and rules

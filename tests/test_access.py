@@ -7,6 +7,7 @@ import db
 import rules as R
 import seed
 import services as S
+import presentation_roles
 from conftest import NOW
 from test_pages import app
 
@@ -41,15 +42,20 @@ def test_external_overseer_has_read_only_navigation(app):
     assert not any(b.label in ("Record review", "Issue recovery demand", "Record outcome", "Assign reviewer") for b in app.button)
 
 
-def test_roles_page_explains_all_roles_and_uses_live_permissions(app):
+def test_roles_page_explains_presentation_roles_and_uses_live_permissions(app):
     app.selectbox(key="role").select(R.OVERSEER).run()
     app.switch_page("views/roles.py").run()
     assert not app.exception
     content = " ".join(m.value for m in app.markdown)
-    assert all(role.replace("&", "&amp;") in content for role in R.ROLES)
+    assert app.selectbox(key="role").options == list(presentation_roles.ROLES)
+    assert all(role.replace("&", "&amp;") in content for role in presentation_roles.ROLES)
     assert "Why this role is needed" in content and "Accessible pages" in content
     # Every row derives its pages from the policy; the overseer has no clearance/export access.
     import re
+    assert len(re.findall(r"<tbody>.*?</tbody>", content)) == 1
+    assert len(re.findall(r"<tr>.*?</tr>", content)) == 6  # Header plus five roles.
+    for role in (R.TECH_REVIEWER, R.LEGAL_LEAD, R.COMMITTEE):
+        assert role.replace("&", "&amp;") not in content
     row = next(r for r in re.findall(r"<tr>.*?</tr>", content) if R.OVERSEER in r)
     assert "Oversight dashboard" in row and "Audit log &amp; integrity" in row
     assert "Clearance verification" not in row and "Oversight export" not in row
@@ -142,8 +148,21 @@ def test_case_scoped_complaints_and_unknown_action_are_rejected(conn, actor):
     assert not S.attempt_reliance(conn, actor("u_tan"), NOW, "C001", "Unrecognised action").ok
 
 
-def test_all_roles_render_case_view_without_exposing_illegal_actions(app):
-    for role in R.ROLES:
+def test_presentation_roles_render_case_view_without_exposing_illegal_actions(app):
+    for role in presentation_roles.ROLES:
         app.selectbox(key="role").select(role).run()
         app.switch_page("views/case_view.py").run()
         assert not app.exception, role
+
+
+def test_old_supporting_role_session_returns_to_presenter_role(app):
+    from streamlit.testing.v1 import AppTest
+    from test_pages import ROOT
+    # Initialise with the state of a pre-upgrade session, before new widgets exist.
+    migrated = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30)
+    migrated.session_state["role"] = R.LEGAL_LEAD
+    migrated.session_state["user_id"] = "u_morgan"
+    migrated.run()
+    assert not migrated.exception
+    assert migrated.session_state["role"] == R.INVESTIGATOR
+    assert migrated.session_state["user_id"] == "u_tan"
